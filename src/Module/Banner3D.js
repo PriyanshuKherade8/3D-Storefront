@@ -25,7 +25,6 @@ const StorefrontLayout = () => {
     };
 
     window.addEventListener("resize", handleResize);
-
     handleResize();
 
     return () => window.removeEventListener("resize", handleResize);
@@ -47,7 +46,8 @@ const StorefrontLayout = () => {
     element,
     screenTypeId,
     parentWidth,
-    parentHeight
+    parentHeight,
+    elementIndex = 0
   ) {
     const sizeObj = getValueByScreenType(element.size, screenTypeId);
     const positionObj = getValueByScreenType(element.position, screenTypeId);
@@ -62,23 +62,21 @@ const StorefrontLayout = () => {
       type: element.type,
       size: { width, height },
       position: { top, left },
-      children: [],
+      element_index: elementIndex,
     };
 
     const hasChildren =
       Array.isArray(element.children) && element.children.length > 0;
 
     if (hasChildren) {
-      computedElement.children = element.children.map((child) =>
-        computeElementLayout(child, screenTypeId, width, height)
+      computedElement.children = element.children.map((child, index) =>
+        computeElementLayout(child, screenTypeId, width, height, index)
       );
     } else {
       const props = {};
 
       for (const key in element) {
         const val = element[key];
-        console.log("val", val);
-
         if (Array.isArray(val) && val[0]?.screen_type_id) {
           const resolved = getPropValue(val, screenTypeId, null);
           if (resolved !== null) {
@@ -102,8 +100,14 @@ const StorefrontLayout = () => {
     innerHeight
   ) {
     const elements = storefrontData?.storefront?.elements || [];
-    return elements.map((element) =>
-      computeElementLayout(element, screenTypeId, innerWidth, innerHeight)
+    return elements.map((element, index) =>
+      computeElementLayout(
+        element,
+        screenTypeId,
+        innerWidth,
+        innerHeight,
+        index
+      )
     );
   }
 
