@@ -39,7 +39,7 @@ const StorefrontLayout = () => {
 
   function getPropValue(dataArray, screenTypeId, fallback = null) {
     const match = getValueByScreenType(dataArray, screenTypeId);
-    return match?.value ?? fallback;
+    return match?.value ?? match?.path ?? fallback;
   }
 
   function computeElementLayout(
@@ -77,12 +77,30 @@ const StorefrontLayout = () => {
 
       for (const key in element) {
         const val = element[key];
-        if (Array.isArray(val) && val[0]?.screen_type_id) {
+        console.log("val", val);
+
+        if (Array.isArray(val) && val.length > 0 && val[0]?.screen_type_id) {
           const resolved = getPropValue(val, screenTypeId, null);
           if (resolved !== null) {
             props[key] = resolved;
           }
-        } else if (typeof val === "string" || typeof val === "number") {
+        } else if (
+          typeof val === "object" &&
+          val !== null &&
+          !Array.isArray(val) &&
+          Object.values(val).some(
+            (v) => typeof v === "object" && v?.screen_type_id
+          )
+        ) {
+          const resolved = getPropValue(Object.values(val), screenTypeId, null);
+          if (resolved !== null) {
+            props[key] = resolved;
+          }
+        } else if (
+          typeof val === "string" ||
+          typeof val === "number" ||
+          typeof val === "boolean"
+        ) {
           props[key] = val;
         }
       }
@@ -117,8 +135,6 @@ const StorefrontLayout = () => {
     window.innerWidth,
     window.innerHeight
   );
-
-  console.log("pageLayout", pageLayout);
 
   return (
     <Grid
