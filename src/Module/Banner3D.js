@@ -68,51 +68,28 @@ const StorefrontLayout = () => {
     const hasChildren =
       Array.isArray(element.children) && element.children.length > 0;
 
-    if (Array.isArray(element.children) && element.children.length > 0) {
-      // Recursive call for children, pass current element's width and height as parent size
+    if (hasChildren) {
       computedElement.children = element.children.map((child) =>
         computeElementLayout(child, screenTypeId, width, height)
       );
-    }
+    } else {
+      const props = {};
 
-    // Assign props only for leaf elements (those without children)
-    if (!element.children || element.children.length === 0) {
-      const commonProps = {
-        background_color: getPropValue(
-          element.background_color,
-          screenTypeId,
-          "transparent"
-        ),
-        object_fit: element.object_fit || "cover",
-        path: getValueByScreenType(element.path, screenTypeId)?.path || "",
-      };
+      for (const key in element) {
+        const val = element[key];
+        console.log("val", val);
 
-      if (element.type === "text" || element.type === "heading") {
-        computedElement.props = {
-          ...commonProps,
-          text: getPropValue(element.text, screenTypeId, ""),
-          font_size: getPropValue(element.font_size, screenTypeId, "16"),
-          font_weight: getPropValue(element.font_weight, screenTypeId, "400"),
-          font_style: getPropValue(element.font_style, screenTypeId, "normal"),
-          font_color: getPropValue(element.font_color, screenTypeId, "#000000"),
-          text_align: getPropValue(element.text_align, screenTypeId, "left"),
-          line_height: getPropValue(
-            element.line_height,
-            screenTypeId,
-            "normal"
-          ),
-          letter_spacing: getPropValue(
-            element.letter_spacing,
-            screenTypeId,
-            "0px"
-          ),
-        };
-      } else {
-        // Fallback for other types like canvas, image, etc.
-        computedElement.props = {
-          ...commonProps,
-        };
+        if (Array.isArray(val) && val[0]?.screen_type_id) {
+          const resolved = getPropValue(val, screenTypeId, null);
+          if (resolved !== null) {
+            props[key] = resolved;
+          }
+        } else if (typeof val === "string" || typeof val === "number") {
+          props[key] = val;
+        }
       }
+
+      computedElement.props = props;
     }
 
     return computedElement;
@@ -136,7 +113,8 @@ const StorefrontLayout = () => {
     window.innerWidth,
     window.innerHeight
   );
-  console.log("zz", pageLayout);
+
+  console.log("pageLayout", pageLayout);
 
   return (
     <Grid
