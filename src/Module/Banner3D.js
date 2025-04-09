@@ -42,6 +42,41 @@ const StorefrontLayout = () => {
     return match?.value ?? match?.path ?? fallback;
   }
 
+  function extractElementProps(element, screenTypeId) {
+    const props = {};
+
+    for (const key in element) {
+      const val = element[key];
+
+      if (Array.isArray(val) && val.length > 0 && val[0]?.screen_type_id) {
+        const resolved = getPropValue(val, screenTypeId, null);
+        if (resolved !== null) {
+          props[key] = resolved;
+        }
+      } else if (
+        typeof val === "object" &&
+        val !== null &&
+        !Array.isArray(val) &&
+        Object.values(val).some(
+          (v) => typeof v === "object" && v?.screen_type_id
+        )
+      ) {
+        const resolved = getPropValue(Object.values(val), screenTypeId, null);
+        if (resolved !== null) {
+          props[key] = resolved;
+        }
+      } else if (
+        typeof val === "string" ||
+        typeof val === "number" ||
+        typeof val === "boolean"
+      ) {
+        props[key] = val;
+      }
+    }
+
+    return props;
+  }
+
   function computeElementLayout(
     element,
     screenTypeId,
@@ -51,67 +86,33 @@ const StorefrontLayout = () => {
     isChild = false
   ) {
     const sizeObj = getValueByScreenType(element.size, screenTypeId);
-    const positionObj = getValueByScreenType(element.position, screenTypeId);
-
     const width = parseFloat(sizeObj?.x || 0) * parentWidth;
     const height = parseFloat(sizeObj?.y || 0) * parentHeight;
 
-    const computedElement = {
+    const layout = {
       element_id: element.element_id,
       type: element.type,
       size: { width, height },
       element_index: elementIndex,
+      props: extractElementProps(element, screenTypeId),
     };
 
+    // Only compute position if it's a top-level element
     if (!isChild) {
+      const positionObj = getValueByScreenType(element.position, screenTypeId);
       const top = parseFloat(positionObj?.top || 0) * parentHeight;
       const left = parseFloat(positionObj?.left || 0) * parentWidth;
-      computedElement.position = { top, left };
+      layout.position = { top, left };
     }
 
-    const hasChildren =
-      Array.isArray(element.children) && element.children.length > 0;
-
-    if (hasChildren) {
-      computedElement.children = element.children.map((child, index) =>
+    // Recursively compute children layout
+    if (Array.isArray(element.children) && element.children.length > 0) {
+      layout.children = element.children.map((child, index) =>
         computeElementLayout(child, screenTypeId, width, height, index, true)
       );
-    } else {
-      const props = {};
-
-      for (const key in element) {
-        const val = element[key];
-
-        if (Array.isArray(val) && val.length > 0 && val[0]?.screen_type_id) {
-          const resolved = getPropValue(val, screenTypeId, null);
-          if (resolved !== null) {
-            props[key] = resolved;
-          }
-        } else if (
-          typeof val === "object" &&
-          val !== null &&
-          !Array.isArray(val) &&
-          Object.values(val).some(
-            (v) => typeof v === "object" && v?.screen_type_id
-          )
-        ) {
-          const resolved = getPropValue(Object.values(val), screenTypeId, null);
-          if (resolved !== null) {
-            props[key] = resolved;
-          }
-        } else if (
-          typeof val === "string" ||
-          typeof val === "number" ||
-          typeof val === "boolean"
-        ) {
-          props[key] = val;
-        }
-      }
-
-      computedElement.props = props;
     }
 
-    return computedElement;
+    return layout;
   }
 
   function generatePageLayout(
