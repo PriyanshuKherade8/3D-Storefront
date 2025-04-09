@@ -47,37 +47,40 @@ const StorefrontLayout = () => {
     screenTypeId,
     parentWidth,
     parentHeight,
-    elementIndex = 0
+    elementIndex = 0,
+    isChild = false
   ) {
     const sizeObj = getValueByScreenType(element.size, screenTypeId);
     const positionObj = getValueByScreenType(element.position, screenTypeId);
 
     const width = parseFloat(sizeObj?.x || 0) * parentWidth;
     const height = parseFloat(sizeObj?.y || 0) * parentHeight;
-    const top = parseFloat(positionObj?.top || 0) * parentHeight;
-    const left = parseFloat(positionObj?.left || 0) * parentWidth;
 
     const computedElement = {
       element_id: element.element_id,
       type: element.type,
       size: { width, height },
-      position: { top, left },
       element_index: elementIndex,
     };
+
+    if (!isChild) {
+      const top = parseFloat(positionObj?.top || 0) * parentHeight;
+      const left = parseFloat(positionObj?.left || 0) * parentWidth;
+      computedElement.position = { top, left };
+    }
 
     const hasChildren =
       Array.isArray(element.children) && element.children.length > 0;
 
     if (hasChildren) {
       computedElement.children = element.children.map((child, index) =>
-        computeElementLayout(child, screenTypeId, width, height, index)
+        computeElementLayout(child, screenTypeId, width, height, index, true)
       );
     } else {
       const props = {};
 
       for (const key in element) {
         const val = element[key];
-        console.log("val", val);
 
         if (Array.isArray(val) && val.length > 0 && val[0]?.screen_type_id) {
           const resolved = getPropValue(val, screenTypeId, null);
