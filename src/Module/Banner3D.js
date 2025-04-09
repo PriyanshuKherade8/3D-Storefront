@@ -143,8 +143,6 @@ const StorefrontLayout = () => {
         <Grid
           key={child.element_id}
           sx={{
-            top: child.position.top,
-            left: child.position.left,
             width: child.size.width,
             height: child.size.height,
             zIndex: child.element_index,
