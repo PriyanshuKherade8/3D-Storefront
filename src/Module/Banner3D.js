@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { useGetProductListData } from "../services";
 
@@ -135,19 +135,106 @@ const StorefrontLayout = () => {
     window.innerWidth,
     window.innerHeight
   );
+  console.log("pageLayout", pageLayout);
+
+  const renderElement = (element) => {
+    if (element.children && element.children.length > 0) {
+      return element.children.map((child) => (
+        <Grid
+          key={child.element_id}
+          sx={{
+            top: child.position.top,
+            left: child.position.left,
+            width: child.size.width,
+            height: child.size.height,
+            zIndex: child.element_index,
+          }}
+          container
+        >
+          {renderElement(child)}
+        </Grid>
+      ));
+    }
+
+    switch (element.type) {
+      case "image":
+        return (
+          <img
+            src={element.props.path}
+            alt=""
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: element.props.object_fit || "cover",
+              borderRadius: element.props.border_radius || 0,
+            }}
+          />
+        );
+
+      case "text":
+        return (
+          <Typography
+            sx={{
+              color: element.props.font_color,
+              fontFamily: element.props.font_family,
+              fontSize: parseFloat(element.props.font_size || "16"),
+              fontWeight: element.props.font_weight,
+              lineHeight: element.props.line_height,
+              letterSpacing: element.props.letter_spacing,
+              textAlign: element.props.text_align,
+              backgroundColor: element.props.background_color || "transparent",
+              border: element.props.is_border
+                ? `${element.props.border || 1}px solid ${
+                    element.props.border_color
+                  }`
+                : "none",
+              width: "100%",
+              height: "100%",
+            }}
+          >
+            {element.props.text}
+          </Typography>
+        );
+
+      case "canvas":
+        return (
+          <canvas
+            style={{
+              width: "100%",
+              height: "100%",
+              // border: element.props.is_border
+              //   ? `${element.props.border}px solid ${element.props.border_color}`
+              //   : "none",
+              border: "1px solid red",
+              borderRadius: element.props.border_radius || 0,
+            }}
+          />
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
-    <Grid
-      container
-      sx={{
-        width: "100vw",
-        height: "100vh",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      <Typography variant="h4">Screen Type: {screenType}</Typography>
-    </Grid>
+    <Box>
+      {pageLayout.map((element) => (
+        <Grid
+          key={element.element_id}
+          sx={{
+            position: "absolute",
+            top: element.position.top,
+            left: element.position.left,
+            width: element.size.width,
+            height: element.size.height,
+            zIndex: element.element_index,
+          }}
+          container
+        >
+          {renderElement(element)}
+        </Grid>
+      ))}
+    </Box>
   );
 };
 
