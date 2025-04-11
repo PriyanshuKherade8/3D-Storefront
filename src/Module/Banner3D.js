@@ -11,6 +11,7 @@ const getScreenTypeValue = (screenWidth, screenHeight) => {
 const StorefrontLayout = () => {
   const { data: storeData } = useGetProductListData();
   const storefrontData = storeData?.data;
+  const itemsData = storefrontData?.storefront?.items;
 
   const [screenType, setScreenType] = useState(() =>
     getScreenTypeValue(window.innerWidth, window.innerHeight)
@@ -29,6 +30,16 @@ const StorefrontLayout = () => {
 
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  const getPolygonMapData = (elementId) => {
+    const item = itemsData?.find((i) => i.element_id === elementId);
+    if (!item || !item.map) return [];
+
+    const screenSpecific = item.map.find(
+      (m) => m.screen_type_id === screenType
+    );
+    return screenSpecific?.values || [];
+  };
 
   function getValueByScreenType(dataArray, screenTypeId) {
     if (!Array.isArray(dataArray)) return null;
@@ -142,85 +153,177 @@ const StorefrontLayout = () => {
   console.log("pageLayout", pageLayout);
 
   const renderElement = (element) => {
-    if (element.children && element.children.length > 0) {
-      return element.children.map((child) => (
-        <Grid
-          key={child.element_id}
-          sx={{
-            width: child.size.width,
-            height: child.size.height,
-            zIndex: child.element_index,
-          }}
-          container
-        >
-          {renderElement(child)}
-        </Grid>
-      ));
-    }
+    const {
+      element_id,
+      size,
+      type,
+      props = {},
+      children,
+      element_index,
+      position,
+    } = element;
 
-    switch (element.type) {
-      case "image":
-        return (
-          <img
-            src={element.props.path}
-            alt=""
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: element.props.object_fit || "cover",
-              borderRadius: element.props.border_radius || 0,
-            }}
-          />
-        );
+    const {
+      justify_content,
+      align_items,
+      direction,
+      background_color,
+      is_border,
+      border,
+      border_color,
+      border_radius,
+      is_transparent,
+      margin_top,
+      margin_bottom,
+      margin_left,
+      margin_right,
+      padding_top,
+      padding_bottom,
+      padding_left,
+      padding_right,
+    } = props;
 
-      case "text":
-        return (
-          <Typography
-            sx={{
-              color: element.props.font_color,
-              fontFamily: element.props.font_family,
-              fontSize: parseFloat(element.props.font_size || "16"),
-              fontWeight: element.props.font_weight,
-              lineHeight: element.props.line_height,
-              letterSpacing: element.props.letter_spacing,
-              textAlign: element.props.text_align,
-              backgroundColor: element.props.background_color || "transparent",
-              border: element.props.is_border
-                ? `${element.props.border || 1}px solid ${
-                    element.props.border_color
-                  }`
-                : "none",
-              width: "100%",
-              height: "100%",
-            }}
-          >
-            {element.props.text}
-          </Typography>
-        );
+    const isTopLevel = position && typeof position === "object";
 
-      case "canvas":
-        return (
-          <canvas
-            style={{
-              width: "100%",
-              height: "100%",
-              // border: element.props.is_border
-              //   ? `${element.props.border}px solid ${element.props.border_color}`
-              //   : "none",
-              border: "1px solid red",
-              borderRadius: element.props.border_radius || 0,
-            }}
-          />
-        );
+    const containerStyles = {
+      width: size?.width,
+      height: size?.height,
+      zIndex: element_index,
+      backgroundColor: is_transparent
+        ? "transparent"
+        : background_color || "transparent",
+      border: is_border
+        ? `${border || 1}px solid ${border_color || "#000"}`
+        : "none",
+      borderRadius: border_radius || 0,
+      marginTop: margin_top,
+      marginBottom: margin_bottom,
+      marginLeft: margin_left,
+      marginRight: margin_right,
+      paddingTop: padding_top,
+      paddingBottom: padding_bottom,
+      paddingLeft: padding_left,
+      paddingRight: padding_right,
+      boxSizing: "border-box",
+      ...(isTopLevel && {
+        position: "absolute",
+        top: position.top,
+        left: position.left,
+      }),
+    };
 
-      default:
-        return null;
-    }
+    return (
+      <Grid
+        key={element_id}
+        container={type === "container"}
+        direction={direction || "row"}
+        justifyContent={justify_content || "flex-start"}
+        alignItems={align_items || "flex-start"}
+        sx={containerStyles}
+      >
+        {Array.isArray(children) && children.length > 0 ? (
+          children.map((child) => renderElement(child))
+        ) : (
+          <>
+            {type === "text" && (
+              <Typography
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  color: props.font_color || "#000",
+                  fontFamily: props.font_family,
+                  fontSize: parseFloat(props.font_size || "16"),
+                  fontWeight: props.font_weight,
+                  lineHeight: props.line_height,
+                  letterSpacing: props.letter_spacing,
+                  textAlign: props.text_align || "left",
+                  backgroundColor: is_transparent
+                    ? "transparent"
+                    : background_color,
+                  border: is_border
+                    ? `${border || 1}px solid ${border_color || "#000"}`
+                    : "none",
+                  borderRadius: border_radius || 0,
+                  boxSizing: "border-box",
+                }}
+              >
+                {props.text}
+              </Typography>
+            )}
+
+            {type === "canvas" && (
+              <canvas
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  // border: is_border
+                  //   ? `${border || 1}px solid ${border_color || "#000"}`
+                  //   : "none",
+                  border: "1px solid red",
+                  borderRadius: border_radius || 0,
+                  backgroundColor: is_transparent
+                    ? "transparent"
+                    : background_color,
+                }}
+              />
+            )}
+
+            {type === "image" && (
+              <>
+                <img
+                  src={props.path}
+                  alt=""
+                  useMap={`#map-${element_id}`}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: props.object_fit || "cover",
+                    borderRadius: border_radius || 0,
+                    border: is_border
+                      ? `${border || 1}px solid ${border_color || "#000"}`
+                      : "none",
+                    backgroundColor: is_transparent
+                      ? "transparent"
+                      : background_color,
+                  }}
+                />
+                <map name={`map-${element_id}`}>
+                  {getPolygonMapData(element_id).map(
+                    (coords, idx) => (
+                      console.log("coords", coords),
+                      (
+                        <area
+                          key={idx}
+                          shape="poly"
+                          coords={coords.join(",")}
+                          href="#"
+                          alt={`Hotspot ${idx}`}
+                          style={{ cursor: "pointer" }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            console.log(
+                              "Clicked polygon",
+                              idx,
+                              "for image",
+                              element_id
+                            );
+                          }}
+                        />
+                      )
+                    )
+                  )}
+                </map>
+              </>
+            )}
+          </>
+        )}
+      </Grid>
+    );
   };
 
   return (
-    <Box>
-      {pageLayout.map((element) => (
+    <Box style={{}}>
+      {/* {pageLayout.map((element) => (
         <Grid
           key={element.element_id}
           sx={{
@@ -235,7 +338,8 @@ const StorefrontLayout = () => {
         >
           {renderElement(element)}
         </Grid>
-      ))}
+      ))} */}
+      {pageLayout.map(renderElement)}
     </Box>
   );
 };
