@@ -13,6 +13,7 @@ const StorefrontLayout = () => {
   const storefrontData = storeData?.data;
   const sessionID = storefrontData?.sessionID;
   const itemsData = storefrontData?.storefront?.items;
+  console.log("itemsData", itemsData);
 
   const [screenType, setScreenType] = useState(() =>
     getScreenTypeValue(window.innerWidth, window.innerHeight)
@@ -274,6 +275,7 @@ const StorefrontLayout = () => {
                   style={{
                     width: "100%",
                     height: "100%",
+                    display: "block",
                     objectFit: props.object_fit || "cover",
                     borderRadius: border_radius || 0,
                     border: is_border
