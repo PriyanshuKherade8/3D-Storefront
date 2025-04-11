@@ -11,6 +11,7 @@ const getScreenTypeValue = (screenWidth, screenHeight) => {
 const StorefrontLayout = () => {
   const { data: storeData } = useGetProductListData();
   const storefrontData = storeData?.data;
+  const sessionID = storefrontData?.sessionID;
   const itemsData = storefrontData?.storefront?.items;
 
   const [screenType, setScreenType] = useState(() =>
@@ -152,6 +153,8 @@ const StorefrontLayout = () => {
   );
   console.log("pageLayout", pageLayout);
 
+  const iframeUrl = `http://storefront.xculptor.io/?storefront=STR1000000001&product=01&session=${sessionID}`;
+
   const renderElement = (element) => {
     const {
       element_id,
@@ -252,19 +255,13 @@ const StorefrontLayout = () => {
             )}
 
             {type === "canvas" && (
-              <canvas
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  // border: is_border
-                  //   ? `${border || 1}px solid ${border_color || "#000"}`
-                  //   : "none",
-                  border: "1px solid red",
-                  borderRadius: border_radius || 0,
-                  backgroundColor: is_transparent
-                    ? "transparent"
-                    : background_color,
-                }}
+              <iframe
+                id={`canvas-iframe`}
+                src={iframeUrl}
+                scrolling="no"
+                height="100%"
+                width="100%"
+                frameBorder={0}
               />
             )}
 
