@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Box, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { useGetProductListData } from "../services";
+import { useGetProductListData, useSetProductChangeCall } from "../services";
 
 const getScreenTypeValue = (screenWidth, screenHeight) => {
   const aspectRatio = screenWidth / screenHeight;
@@ -10,6 +10,8 @@ const getScreenTypeValue = (screenWidth, screenHeight) => {
 
 const StorefrontLayout = () => {
   const { data: storeData } = useGetProductListData();
+  const { mutate: changeViewCall } = useSetProductChangeCall();
+
   const storefrontData = storeData?.data;
   const sessionID = storefrontData?.sessionID;
   const itemsData = storefrontData?.storefront?.items;
@@ -306,7 +308,7 @@ const StorefrontLayout = () => {
                       if (mapData.screen_type_id === screenType) {
                         return (
                           <area
-                            key={mapData.screen_type_id}
+                            key={mapData.screen_type_id + item.item_id}
                             shape="poly"
                             coords={mapData.coords}
                             href="#"
@@ -318,6 +320,16 @@ const StorefrontLayout = () => {
                                 "Clicked polygon for item:",
                                 item.item_id
                               );
+
+                              const payloadForItemChange = {
+                                session_id: sessionID,
+                                message: {
+                                  type: "change_item",
+                                  message: { item_id: item.item_id },
+                                },
+                              };
+
+                              changeViewCall(payloadForItemChange);
                             }}
                           />
                         );
