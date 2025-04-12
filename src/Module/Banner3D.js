@@ -15,6 +15,21 @@ const StorefrontLayout = () => {
   const itemsData = storefrontData?.storefront?.items;
   console.log("itemsData", itemsData);
 
+  const convertedItemsData = itemsData?.map((item) => {
+    const convertedMaps = item?.map.map((screen) => {
+      const coordsString = screen.values.join(", ");
+      return {
+        screen_type_id: screen.screen_type_id,
+        coords: coordsString,
+      };
+    });
+
+    return {
+      ...item,
+      map: convertedMaps,
+    };
+  });
+
   const [screenType, setScreenType] = useState(() =>
     getScreenTypeValue(window.innerWidth, window.innerHeight)
   );
@@ -265,13 +280,12 @@ const StorefrontLayout = () => {
                 frameBorder={0}
               />
             )}
-
             {type === "image" && (
               <>
                 <img
                   src={props.path}
-                  alt=""
-                  useMap={`#map-${element_id}`}
+                  alt="Test Image"
+                  useMap="#map-test"
                   style={{
                     width: "100%",
                     height: "100%",
@@ -286,30 +300,30 @@ const StorefrontLayout = () => {
                       : background_color,
                   }}
                 />
-                <map name={`map-${element_id}`}>
-                  {getPolygonMapData(element_id).map(
-                    (coords, idx) => (
-                      console.log("coords", coords),
-                      (
-                        <area
-                          key={idx}
-                          shape="poly"
-                          coords={coords.join(",")}
-                          href="#"
-                          alt={`Hotspot ${idx}`}
-                          style={{ cursor: "pointer" }}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            console.log(
-                              "Clicked polygon",
-                              idx,
-                              "for image",
-                              element_id
-                            );
-                          }}
-                        />
-                      )
-                    )
+                <map name="map-test">
+                  {convertedItemsData?.map((item) =>
+                    item.map.map((mapData) => {
+                      if (mapData.screen_type_id === screenType) {
+                        return (
+                          <area
+                            key={mapData.screen_type_id}
+                            shape="poly"
+                            coords={mapData.coords}
+                            href="#"
+                            alt="Test Hotspot"
+                            style={{ cursor: "pointer" }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              console.log(
+                                "Clicked polygon for item:",
+                                item.item_id
+                              );
+                            }}
+                          />
+                        );
+                      }
+                      return null;
+                    })
                   )}
                 </map>
               </>
@@ -320,27 +334,7 @@ const StorefrontLayout = () => {
     );
   };
 
-  return (
-    <Box style={{}}>
-      {/* {pageLayout.map((element) => (
-        <Grid
-          key={element.element_id}
-          sx={{
-            position: "absolute",
-            top: element.position.top,
-            left: element.position.left,
-            width: element.size.width,
-            height: element.size.height,
-            zIndex: element.element_index,
-          }}
-          container
-        >
-          {renderElement(element)}
-        </Grid>
-      ))} */}
-      {pageLayout.map(renderElement)}
-    </Box>
-  );
+  return <Box>{pageLayout.map(renderElement)}</Box>;
 };
 
 export default StorefrontLayout;
