@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Box, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { useGetProductListData, useSetProductChangeCall } from "../services";
@@ -9,13 +9,16 @@ const getScreenTypeValue = (screenWidth, screenHeight) => {
 };
 
 const StorefrontLayout = () => {
+  const imageRef = useRef(null);
+  const [scaledCoordsMap, setScaledCoordsMap] = useState({});
+  const [imageLoaded, setImageLoaded] = useState(false);
+
   const { data: storeData } = useGetProductListData();
   const { mutate: changeViewCall } = useSetProductChangeCall();
 
   const storefrontData = storeData?.data;
   const sessionID = storefrontData?.sessionID;
   const itemsData = storefrontData?.storefront?.items;
-  console.log("itemsData", itemsData);
 
   const convertedItemsData = itemsData?.map((item) => {
     const convertedMaps = item?.map.map((screen) => {
@@ -50,29 +53,68 @@ const StorefrontLayout = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const getPolygonMapData = (elementId) => {
-    const item = itemsData?.find((i) => i.element_id === elementId);
-    if (!item || !item.map) return [];
-
-    const screenSpecific = item.map.find(
-      (m) => m.screen_type_id === screenType
-    );
-    return screenSpecific?.values || [];
+  const scalePolygonCoords = (
+    originalCoords,
+    naturalWidth,
+    naturalHeight,
+    currentWidth,
+    currentHeight
+  ) => {
+    const scaled = [];
+    for (let i = 0; i < originalCoords.length; i += 2) {
+      const x = (originalCoords[i] / naturalWidth) * currentWidth;
+      const y = (originalCoords[i + 1] / naturalHeight) * currentHeight;
+      scaled.push(Math.round(x));
+      scaled.push(Math.round(y));
+    }
+    return scaled;
   };
 
-  function getValueByScreenType(dataArray, screenTypeId) {
-    if (!Array.isArray(dataArray)) return null;
-    return (
-      dataArray.find((item) => item.screen_type_id === screenTypeId) || null
-    );
-  }
+  const updateScaledCoords = () => {
+    if (!imageRef.current) return;
 
-  function getPropValue(dataArray, screenTypeId, fallback = null) {
+    const currentWidth = imageRef.current.clientWidth;
+    const currentHeight = imageRef.current.clientHeight;
+    const naturalWidth = imageRef.current.naturalWidth;
+    const naturalHeight = imageRef.current.naturalHeight;
+
+    if (!naturalWidth || !naturalHeight) return;
+
+    const newCoordsMap = {};
+    itemsData?.forEach((item) => {
+      const mapEntry = item.map.find((m) => m.screen_type_id === screenType);
+      if (!mapEntry || !Array.isArray(mapEntry.values)) return;
+
+      const scaled = scalePolygonCoords(
+        mapEntry.values,
+        naturalWidth,
+        naturalHeight,
+        currentWidth,
+        currentHeight
+      );
+      newCoordsMap[item.item_id] = scaled.join(",");
+    });
+
+    setScaledCoordsMap(newCoordsMap);
+  };
+
+  useEffect(() => {
+    if (imageLoaded) updateScaledCoords();
+    window.addEventListener("resize", updateScaledCoords);
+    return () => window.removeEventListener("resize", updateScaledCoords);
+  }, [itemsData, screenType, imageLoaded]);
+
+  const getValueByScreenType = (dataArray, screenTypeId) =>
+    Array.isArray(dataArray)
+      ? dataArray.find((item) => item.screen_type_id === screenTypeId) || null
+      : null;
+
+  const getPropValue = (dataArray, screenTypeId, fallback = null) => {
     const match = getValueByScreenType(dataArray, screenTypeId);
     return match?.value ?? match?.path ?? fallback;
-  }
+  };
 
-  function extractElementProps(element, screenTypeId) {
+  const extractElementProps = (element, screenTypeId) => {
     const props = {};
 
     for (const key in element) {
@@ -80,21 +122,15 @@ const StorefrontLayout = () => {
 
       if (Array.isArray(val) && val.length > 0 && val[0]?.screen_type_id) {
         const resolved = getPropValue(val, screenTypeId, null);
-        if (resolved !== null) {
-          props[key] = resolved;
-        }
+        if (resolved !== null) props[key] = resolved;
       } else if (
         typeof val === "object" &&
         val !== null &&
         !Array.isArray(val) &&
-        Object.values(val).some(
-          (v) => typeof v === "object" && v?.screen_type_id
-        )
+        Object.values(val).some((v) => v?.screen_type_id)
       ) {
         const resolved = getPropValue(Object.values(val), screenTypeId, null);
-        if (resolved !== null) {
-          props[key] = resolved;
-        }
+        if (resolved !== null) props[key] = resolved;
       } else if (
         typeof val === "string" ||
         typeof val === "number" ||
@@ -105,16 +141,16 @@ const StorefrontLayout = () => {
     }
 
     return props;
-  }
+  };
 
-  function computeElementLayout(
+  const computeElementLayout = (
     element,
     screenTypeId,
     parentWidth,
     parentHeight,
     elementIndex = 0,
     isChild = false
-  ) {
+  ) => {
     const sizeObj = getValueByScreenType(element.size, screenTypeId);
     const width = parseFloat(sizeObj?.x || 0) * parentWidth;
     const height = parseFloat(sizeObj?.y || 0) * parentHeight;
@@ -127,7 +163,6 @@ const StorefrontLayout = () => {
       props: extractElementProps(element, screenTypeId),
     };
 
-    // Only compute position if it's a top-level element
     if (!isChild) {
       const positionObj = getValueByScreenType(element.position, screenTypeId);
       const top = parseFloat(positionObj?.top || 0) * parentHeight;
@@ -135,7 +170,6 @@ const StorefrontLayout = () => {
       layout.position = { top, left };
     }
 
-    // Recursively compute children layout
     if (Array.isArray(element.children) && element.children.length > 0) {
       layout.children = element.children.map((child, index) =>
         computeElementLayout(child, screenTypeId, width, height, index, true)
@@ -143,14 +177,14 @@ const StorefrontLayout = () => {
     }
 
     return layout;
-  }
+  };
 
-  function generatePageLayout(
+  const generatePageLayout = (
     storefrontData,
     screenTypeId,
     innerWidth,
     innerHeight
-  ) {
+  ) => {
     const elements = storefrontData?.storefront?.elements || [];
     return elements.map((element, index) =>
       computeElementLayout(
@@ -161,7 +195,7 @@ const StorefrontLayout = () => {
         index
       )
     );
-  }
+  };
 
   const pageLayout = generatePageLayout(
     storefrontData,
@@ -169,7 +203,6 @@ const StorefrontLayout = () => {
     window.innerWidth,
     window.innerHeight
   );
-  console.log("pageLayout", pageLayout);
 
   const iframeUrl = `http://storefront.xculptor.io/?storefront=STR1000000001&product=01&session=${sessionID}`;
 
@@ -285,6 +318,7 @@ const StorefrontLayout = () => {
             {type === "image" && (
               <>
                 <img
+                  ref={imageRef}
                   src={props.path}
                   alt="Test Image"
                   useMap="#map-test"
@@ -301,42 +335,40 @@ const StorefrontLayout = () => {
                       ? "transparent"
                       : background_color,
                   }}
+                  onLoad={() => setImageLoaded(true)}
                 />
                 <map name="map-test">
-                  {convertedItemsData?.map((item) =>
-                    item.map.map((mapData) => {
-                      if (mapData.screen_type_id === screenType) {
-                        return (
-                          <area
-                            key={mapData.screen_type_id + item.item_id}
-                            shape="poly"
-                            coords={mapData.coords}
-                            href="#"
-                            alt="Test Hotspot"
-                            style={{ cursor: "pointer" }}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              console.log(
-                                "Clicked polygon for item:",
-                                item.item_id
-                              );
+                  {convertedItemsData?.map((item) => {
+                    const coords = scaledCoordsMap[item.item_id];
+                    if (!coords) return null;
+                    return (
+                      <area
+                        key={item.item_id}
+                        shape="poly"
+                        coords={coords}
+                        href="#"
+                        alt="Test Hotspot"
+                        style={{ cursor: "pointer" }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          console.log(
+                            "Clicked polygon for item:",
+                            item.item_id
+                          );
 
-                              const payloadForItemChange = {
-                                session_id: sessionID,
-                                message: {
-                                  type: "change_item",
-                                  message: { item_id: item.item_id },
-                                },
-                              };
+                          const payload = {
+                            session_id: sessionID,
+                            message: {
+                              type: "change_item",
+                              message: { item_id: item.item_id },
+                            },
+                          };
 
-                              changeViewCall(payloadForItemChange);
-                            }}
-                          />
-                        );
-                      }
-                      return null;
-                    })
-                  )}
+                          changeViewCall(payload);
+                        }}
+                      />
+                    );
+                  })}
                 </map>
               </>
             )}
