@@ -1,9 +1,11 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { backendClient, httpClient } from "./httpClient";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 
 export const useGetProductListData = () => {
-  const { storefrontId } = useParams();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const storefrontId = queryParams.get("storefront");
 
   const { data, error, isLoading } = useQuery({
     queryKey: ["allData", storefrontId],

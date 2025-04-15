@@ -6,7 +6,7 @@ const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/storefront/:storefrontId" element={<Banner3D />} />
+        <Route path="/" element={<Banner3D />} />
       </Routes>
     </Router>
   );
