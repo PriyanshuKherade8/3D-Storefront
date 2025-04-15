@@ -1,10 +1,15 @@
-import React, { useEffect, useRef, useState } from "react";
-import ImageMap from "./ImageMap";
-import { useGetProductListData } from "./services";
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Banner3D from "./Module/Banner3D";
 
 const App = () => {
-  return <Banner3D />;
+  return (
+    <Router>
+      <Routes>
+        <Route path="/storefront/:storefrontId" element={<Banner3D />} />
+      </Routes>
+    </Router>
+  );
 };
 
 export default App;

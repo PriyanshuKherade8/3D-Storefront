@@ -1,11 +1,14 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { backendClient, httpClient } from "./httpClient";
+import { useParams } from "react-router-dom";
 
 export const useGetProductListData = () => {
+  const { storefrontId } = useParams();
+
   const { data, error, isLoading } = useQuery({
-    queryKey: ["allData"],
-    queryFn: () => httpClient.get(`get_storefront?storefront=STR1000000001`),
-    // enabled: !!url_id,
+    queryKey: ["allData", storefrontId],
+    queryFn: () => httpClient.get(`get_storefront?storefront=${storefrontId}`),
+    enabled: !!storefrontId,
     refetchOnWindowFocus: false,
   });
 
