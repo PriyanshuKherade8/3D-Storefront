@@ -16,10 +16,14 @@ const StorefrontLayout = () => {
   const [selectedItemId, setSelectedItemId] = useState(null);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
 
+  const [hoveredItemId, setHoveredItemId] = useState(null);
+
   const { data: storeData } = useGetProductListData();
   const { mutate: changeViewCall } = useSetProductChangeCall();
 
   const storefrontData = storeData?.data;
+  const screenOverlayDetails = storefrontData?.storefront?.screen;
+
   const sessionID = storefrontData?.sessionID;
   const itemsData = storefrontData?.storefront?.items;
 
@@ -247,6 +251,35 @@ const StorefrontLayout = () => {
     window.innerHeight
   );
 
+  const getSvgStyle = (state, overlayDetails) => {
+    const config =
+      state === "hover"
+        ? overlayDetails?.hover_state
+        : overlayDetails?.selected_state;
+
+    const styles = {};
+
+    if (config?.[`is_${state}`]) {
+      if (config.is_stroke) {
+        styles.stroke = config.stroke_color || "transparent";
+        styles.strokeWidth = parseFloat(config.stroke_width ?? 0);
+        styles.strokeOpacity = parseFloat(config.stroke_opacity ?? 1);
+      }
+
+      if (config.is_fill) {
+        styles.fill = config.fill_color
+          ? `#${config.fill_color.replace("#", "")}`
+          : "transparent";
+        styles.fillOpacity = parseFloat(config.fill_opacity ?? 1);
+      }
+    }
+
+    return styles;
+  };
+
+  const hoverStyle = getSvgStyle("hover", screenOverlayDetails);
+  const selectedStyle = getSvgStyle("selected", screenOverlayDetails);
+
   const iframeUrl = `http://storefront.xculptor.io/?storefront=STR1000000001&product=01&session=${sessionID}`;
 
   const renderElement = (element) => {
@@ -415,21 +448,56 @@ const StorefrontLayout = () => {
                         points.push(`${coordsArray[i]},${coordsArray[i + 1]}`);
                       }
 
+                      const isHovered = hoveredItemId === item.item_id;
+                      const isSelected = item.item_id === selectedItemId;
+
                       return (
                         <polygon
                           key={item.item_id}
                           points={points.join(" ")}
-                          fill="red"
-                          fillOpacity="0.2"
-                          stroke={
-                            item.item_id === selectedItemId ? "#00f" : "#f00"
-                          }
-                          strokeWidth={2}
+                          onMouseEnter={() => {
+                            setHoveredItemId(item.item_id);
+                          }}
+                          onMouseLeave={() => {
+                            setHoveredItemId(null);
+                          }}
                           style={{
-                            filter:
-                              item.item_id === selectedItemId
-                                ? "drop-shadow(0 0 8px rgba(0, 0, 255, 0.8))"
-                                : "none",
+                            fill: isHovered
+                              ? hoverStyle.fill
+                              : isSelected
+                              ? selectedStyle.fill
+                              : "rgba(0,0,0,0)",
+                            fillOpacity: isHovered
+                              ? hoverStyle.fillOpacity
+                              : isSelected
+                              ? selectedStyle.fillOpacity
+                              : 0,
+                            stroke: isHovered
+                              ? hoverStyle.stroke
+                              : isSelected
+                              ? selectedStyle.stroke
+                              : "transparent",
+                            strokeWidth: isHovered
+                              ? hoverStyle.strokeWidth
+                              : isSelected
+                              ? selectedStyle.strokeWidth
+                              : 0,
+                            pointerEvents: "auto",
+                            cursor: "pointer",
+                          }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setSelectedItemId(item.item_id);
+
+                            const payload = {
+                              session_id: sessionID,
+                              message: {
+                                type: "change_item",
+                                message: { item_id: item.item_id },
+                              },
+                            };
+
+                            changeViewCall(payload);
                           }}
                         />
                       );
