@@ -263,8 +263,13 @@ const StorefrontLayout = () => {
       paddingLeft: padding_left,
       paddingRight: padding_right,
       boxSizing: "border-box",
+      // ...(isTopLevel && {
+      //   position: "absolute",
+      //   top: position.top,
+      //   left: position.left,
+      // }),
+      position: isTopLevel ? "absolute" : "relative",
       ...(isTopLevel && {
-        position: "absolute",
         top: position.top,
         left: position.left,
       }),
@@ -330,7 +335,8 @@ const StorefrontLayout = () => {
                     width: "100%",
                     height: "auto",
                     display: "block",
-                    objectFit: props.object_fit || "cover",
+                    // objectFit: props.object_fit || "cover",
+                    objectFit: "contain",
                     borderRadius: border_radius || 0,
                     border: is_border
                       ? `${border || 1}px solid ${border_color || "#000"}`
@@ -347,14 +353,15 @@ const StorefrontLayout = () => {
                     position: "absolute",
                     top: 0,
                     left: 0,
-                    width: "100%",
-                    // height: "100%",
+                    width: `${imageSize.width}px`,
+                    height: `${imageSize.height}px`,
                     pointerEvents: "none",
+                    zIndex: 10,
                   }}
                 >
                   <svg
-                    width="100%"
-                    height="100%"
+                    width={imageSize.width}
+                    height={imageSize.height}
                     viewBox={`0 0 ${imageSize.width} ${imageSize.height}`}
                     xmlns="http://www.w3.org/2000/svg"
                     style={{ position: "absolute", top: 0, left: 0 }}
@@ -373,7 +380,8 @@ const StorefrontLayout = () => {
                         <polygon
                           key={item.item_id}
                           points={points.join(" ")}
-                          fill="transparent"
+                          fill="red"
+                          fillOpacity="0.2"
                           stroke={
                             item.item_id === selectedItemId ? "#00f" : "#f00"
                           }
