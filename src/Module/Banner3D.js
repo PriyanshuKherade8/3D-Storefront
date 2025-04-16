@@ -9,6 +9,7 @@ const getScreenTypeValue = (screenWidth, screenHeight) => {
 };
 
 const StorefrontLayout = () => {
+  const resizeObserverRef = useRef(null);
   const imageRef = useRef(null);
   const [scaledCoordsMap, setScaledCoordsMap] = useState({});
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -107,6 +108,44 @@ const StorefrontLayout = () => {
     window.addEventListener("resize", updateScaledCoords);
     return () => window.removeEventListener("resize", updateScaledCoords);
   }, [itemsData, screenType, imageLoaded]);
+
+  useEffect(() => {
+    if (!imageRef.current) return;
+
+    resizeObserverRef.current = new ResizeObserver(() => {
+      const img = imageRef.current;
+      if (!img || !img.naturalWidth || !img.naturalHeight) return;
+
+      const currentWidth = img.clientWidth;
+      const currentHeight = img.clientHeight;
+
+      setImageSize({ width: currentWidth, height: currentHeight });
+
+      const newCoordsMap = {};
+      itemsData?.forEach((item) => {
+        const mapEntry = item.map.find((m) => m.screen_type_id === screenType);
+        if (!mapEntry || !Array.isArray(mapEntry.values)) return;
+
+        const scaled = scalePolygonCoords(
+          mapEntry.values,
+          img.naturalWidth,
+          img.naturalHeight,
+          currentWidth,
+          currentHeight
+        );
+
+        newCoordsMap[item.item_id] = scaled.join(",");
+      });
+
+      setScaledCoordsMap(newCoordsMap);
+    });
+
+    resizeObserverRef.current.observe(imageRef.current);
+
+    return () => {
+      resizeObserverRef.current?.disconnect();
+    };
+  }, [itemsData, screenType]);
 
   const getValueByScreenType = (dataArray, screenTypeId) =>
     Array.isArray(dataArray)
