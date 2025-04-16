@@ -27,6 +27,13 @@ const StorefrontLayout = () => {
   const sessionID = storefrontData?.sessionID;
   const itemsData = storefrontData?.storefront?.items;
 
+  useEffect(() => {
+    const defaultItem = itemsData?.find((item) => item?.is_default);
+    if (defaultItem) {
+      setSelectedItemId(defaultItem?.item_id);
+    }
+  }, [itemsData]);
+
   const convertedItemsData = itemsData?.map((item) => {
     const convertedMaps = item?.map.map((screen) => {
       const coordsString = screen.values.join(", ");
