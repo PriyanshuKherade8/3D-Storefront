@@ -12,6 +12,8 @@ const StorefrontLayout = () => {
   const imageRef = useRef(null);
   const [scaledCoordsMap, setScaledCoordsMap] = useState({});
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState(null);
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
 
   const { data: storeData } = useGetProductListData();
   const { mutate: changeViewCall } = useSetProductChangeCall();
@@ -79,6 +81,8 @@ const StorefrontLayout = () => {
     const naturalHeight = imageRef.current.naturalHeight;
 
     if (!naturalWidth || !naturalHeight) return;
+
+    setImageSize({ width: currentWidth, height: currentHeight });
 
     const newCoordsMap = {};
     itemsData?.forEach((item) => {
@@ -324,7 +328,7 @@ const StorefrontLayout = () => {
                   useMap="#map-test"
                   style={{
                     width: "100%",
-                    height: "100%",
+                    height: "auto",
                     display: "block",
                     objectFit: props.object_fit || "cover",
                     borderRadius: border_radius || 0,
@@ -337,6 +341,55 @@ const StorefrontLayout = () => {
                   }}
                   onLoad={() => setImageLoaded(true)}
                 />
+
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    // height: "100%",
+                    pointerEvents: "none",
+                  }}
+                >
+                  <svg
+                    width="100%"
+                    height="100%"
+                    viewBox={`0 0 ${imageSize.width} ${imageSize.height}`}
+                    xmlns="http://www.w3.org/2000/svg"
+                    style={{ position: "absolute", top: 0, left: 0 }}
+                  >
+                    {convertedItemsData?.map((item) => {
+                      const coords = scaledCoordsMap[item.item_id];
+                      if (!coords) return null;
+
+                      const coordsArray = coords.split(",").map(Number);
+                      const points = [];
+                      for (let i = 0; i < coordsArray.length; i += 2) {
+                        points.push(`${coordsArray[i]},${coordsArray[i + 1]}`);
+                      }
+
+                      return (
+                        <polygon
+                          key={item.item_id}
+                          points={points.join(" ")}
+                          fill="transparent"
+                          stroke={
+                            item.item_id === selectedItemId ? "#00f" : "#f00"
+                          }
+                          strokeWidth={2}
+                          style={{
+                            filter:
+                              item.item_id === selectedItemId
+                                ? "drop-shadow(0 0 8px rgba(0, 0, 255, 0.8))"
+                                : "none",
+                          }}
+                        />
+                      );
+                    })}
+                  </svg>
+                </Box>
+
                 <map name="map-test">
                   {convertedItemsData?.map((item) => {
                     const coords = scaledCoordsMap[item.item_id];
@@ -351,10 +404,7 @@ const StorefrontLayout = () => {
                         style={{ cursor: "pointer" }}
                         onClick={(e) => {
                           e.preventDefault();
-                          console.log(
-                            "Clicked polygon for item:",
-                            item.item_id
-                          );
+                          setSelectedItemId(item.item_id);
 
                           const payload = {
                             session_id: sessionID,
