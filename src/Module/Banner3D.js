@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Box, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { useGetProductListData, useSetProductChangeCall } from "../services";
+import { useLocation } from "react-router-dom";
 
 const getScreenTypeValue = (screenWidth, screenHeight) => {
   const aspectRatio = screenWidth / screenHeight;
@@ -17,6 +18,10 @@ const StorefrontLayout = () => {
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
 
   const [hoveredItemId, setHoveredItemId] = useState(null);
+
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const storefrontId = queryParams.get("storefront");
 
   const { data: storeData } = useGetProductListData();
   const { mutate: changeViewCall } = useSetProductChangeCall();
@@ -287,7 +292,7 @@ const StorefrontLayout = () => {
   const hoverStyle = getSvgStyle("hover", screenOverlayDetails);
   const selectedStyle = getSvgStyle("selected", screenOverlayDetails);
 
-  const iframeUrl = `http://storefront.xculptor.io/?storefront=STR1000000001&product=01&session=${sessionID}`;
+  const iframeUrl = `http://storefront.xculptor.io/?storefront=${storefrontId}&product=01&session=${sessionID}`;
 
   const renderElement = (element) => {
     const {
@@ -412,10 +417,9 @@ const StorefrontLayout = () => {
                   useMap="#map-test"
                   style={{
                     width: "100%",
-                    height: "auto",
+                    height: "100%",
                     display: "block",
-                    // objectFit: props.object_fit || "cover",
-                    objectFit: "contain",
+                    objectFit: props.object_fit || "cover",
                     borderRadius: border_radius || 0,
                     border: is_border
                       ? `${border || 1}px solid ${border_color || "#000"}`
