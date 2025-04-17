@@ -15,6 +15,7 @@ const StorefrontLayout = () => {
   const [scaledCoordsMap, setScaledCoordsMap] = useState({});
   const [imageLoaded, setImageLoaded] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState(null);
+
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
 
   const [hoveredItemId, setHoveredItemId] = useState(null);
@@ -263,6 +264,36 @@ const StorefrontLayout = () => {
     window.innerHeight
   );
 
+  function updateTextElements(itemsData, selectedItemId, screenType) {
+    const selectedItem = itemsData.find(
+      (item) => item.item_id === selectedItemId
+    );
+
+    if (!selectedItem) return [];
+
+    return selectedItem.element_display.map((element) => {
+      if (element.type === "text") {
+        const matchedText = element.text.find(
+          (t) => t.screen_type_id === screenType
+        );
+        const displayText = matchedText?.text || "";
+
+        return {
+          ...element,
+          text: displayText,
+        };
+      }
+
+      return element;
+    });
+  }
+
+  const updatedElements = updateTextElements(
+    itemsData,
+    selectedItemId,
+    screenType
+  );
+
   const getSvgStyle = (state, overlayDetails) => {
     const config =
       state === "hover"
@@ -394,7 +425,9 @@ const StorefrontLayout = () => {
                   boxSizing: "border-box",
                 }}
               >
-                {props.text}
+                {updatedElements?.length > 0
+                  ? updatedElements?.[0]?.text
+                  : props.text}
               </Typography>
             )}
 
