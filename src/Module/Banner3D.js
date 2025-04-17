@@ -419,7 +419,7 @@ const StorefrontLayout = () => {
                     width: "100%",
                     height: "100%",
                     display: "block",
-                    objectFit: props.object_fit || "cover",
+                    // objectFit: props.object_fit || "cover",
                     borderRadius: border_radius || 0,
                     border: is_border
                       ? `${border || 1}px solid ${border_color || "#000"}`
