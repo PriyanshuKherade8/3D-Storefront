@@ -30,3 +30,17 @@ export const useSetProductChangeCall = () => {
 
   return { mutate, isLoading, data, error };
 };
+
+export const useSetActionCall = () => {
+  const { mutate, isLoading, data, error } = useMutation({
+    mutationFn: async (payload) => {
+      const response = await backendClient.post(
+        "/player/send_socket_message",
+        payload
+      );
+      return response.data;
+    },
+  });
+
+  return { mutate, isLoading, data, error };
+};

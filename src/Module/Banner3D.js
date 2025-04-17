@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Box, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import { useGetProductListData, useSetProductChangeCall } from "../services";
+import {
+  useGetProductListData,
+  useSetActionCall,
+  useSetProductChangeCall,
+} from "../services";
 import { useLocation } from "react-router-dom";
 
 const getScreenTypeValue = (screenWidth, screenHeight) => {
@@ -26,12 +30,14 @@ const StorefrontLayout = () => {
 
   const { data: storeData } = useGetProductListData();
   const { mutate: changeViewCall } = useSetProductChangeCall();
+  const { mutate: sendControlCall } = useSetActionCall();
 
   const storefrontData = storeData?.data;
   const screenOverlayDetails = storefrontData?.storefront?.screen;
 
   const sessionID = storefrontData?.sessionID;
   const itemsData = storefrontData?.storefront?.items;
+  const controlsData = storefrontData?.storefront?.controls;
 
   useEffect(() => {
     const defaultItem = itemsData?.find((item) => item?.is_default);
@@ -265,8 +271,8 @@ const StorefrontLayout = () => {
   );
 
   function updateTextElements(itemsData, selectedItemId, screenType) {
-    const selectedItem = itemsData.find(
-      (item) => item.item_id === selectedItemId
+    const selectedItem = itemsData?.find(
+      (item) => item?.item_id === selectedItemId
     );
 
     if (!selectedItem) return [];
@@ -293,6 +299,39 @@ const StorefrontLayout = () => {
     selectedItemId,
     screenType
   );
+
+  const fileType = screenType === "01" ? "L" : "S";
+  const getControlIconPath = (icons, fileType) => {
+    const icon = icons.find((icon) => icon.file_type === fileType);
+    return icon?.path || "";
+  };
+
+  const [controlStates, setControlStates] = useState(
+    controlsData?.reduce((acc, control) => {
+      acc[control.control_id] = control.default_value === "true";
+      return acc;
+    }, {})
+  );
+
+  const handleControlClick = (control) => {
+    setControlStates((prevStates) => {
+      const newValue = !prevStates?.[control?.control_id];
+
+      const payload = {
+        session_id: sessionID,
+        message: {
+          type: "control",
+          message: {
+            control_id: control.control_id,
+            value: newValue,
+          },
+        },
+      };
+
+      sendControlCall(payload);
+      return { ...prevStates, [control.control_id]: newValue };
+    });
+  };
 
   const getSvgStyle = (state, overlayDetails) => {
     const config =
@@ -579,6 +618,34 @@ const StorefrontLayout = () => {
                     );
                   })}
                 </map>
+              </>
+            )}
+            {type === "control" && (
+              <>
+                <Box display="flex">
+                  {controlsData?.map((control) => {
+                    const iconPath = getControlIconPath(
+                      control.control_icons,
+                      fileType
+                    );
+
+                    return (
+                      <img
+                        key={control.control_id}
+                        src={iconPath}
+                        alt={control.control_name}
+                        title={control.control_name}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          margin: 8,
+                          cursor: "pointer",
+                        }}
+                        onClick={() => handleControlClick(control)}
+                      />
+                    );
+                  })}
+                </Box>
               </>
             )}
           </>
