@@ -538,12 +538,8 @@ const StorefrontLayout = () => {
                         <polygon
                           key={item.item_id}
                           points={points.join(" ")}
-                          onMouseEnter={() => {
-                            setHoveredItemId(item.item_id);
-                          }}
-                          onMouseLeave={() => {
-                            setHoveredItemId(null);
-                          }}
+                          onMouseEnter={() => setHoveredItemId(item.item_id)}
+                          onMouseLeave={() => setHoveredItemId(null)}
                           style={{
                             fill: isHovered
                               ? hoverStyle.fill
@@ -555,15 +551,15 @@ const StorefrontLayout = () => {
                               : isSelected
                               ? selectedStyle.fillOpacity
                               : 0,
-                            stroke: isHovered
-                              ? hoverStyle.stroke
-                              : isSelected
+                            stroke: isSelected
                               ? selectedStyle.stroke
+                              : isHovered
+                              ? hoverStyle.stroke
                               : "transparent",
-                            strokeWidth: isHovered
-                              ? hoverStyle.strokeWidth
-                              : isSelected
+                            strokeWidth: isSelected
                               ? selectedStyle.strokeWidth
+                              : isHovered
+                              ? hoverStyle.strokeWidth
                               : 0,
                             pointerEvents: "auto",
                             cursor: "pointer",
