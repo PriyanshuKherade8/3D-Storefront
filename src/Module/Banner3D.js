@@ -481,11 +481,30 @@ const StorefrontLayout = () => {
               />
             )}
             {type === "image" && (
+              <img
+                src={props.path}
+                alt="Image"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  display: "block",
+                  borderRadius: border_radius || 0,
+                  border: is_border
+                    ? `${border || 1}px solid ${border_color || "#000"}`
+                    : "none",
+                  backgroundColor: is_transparent
+                    ? "transparent"
+                    : background_color,
+                }}
+              />
+            )}
+
+            {type === "imagemap" && (
               <>
                 <img
                   ref={imageRef}
                   src={props.path}
-                  alt="Test Image"
+                  alt="ImageMap"
                   useMap="#map-test"
                   style={{
                     width: "100%",
