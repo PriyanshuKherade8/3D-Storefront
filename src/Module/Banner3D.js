@@ -375,6 +375,10 @@ const StorefrontLayout = () => {
       position,
     } = element;
 
+    const shouldShowDynamicText =
+      element?.element_id === element?.props?.element_id &&
+      element?.props?.is_dynamic;
+
     const {
       justify_content,
       align_items,
@@ -393,13 +397,14 @@ const StorefrontLayout = () => {
       padding_bottom,
       padding_left,
       padding_right,
+      text_align,
     } = props;
 
     const isTopLevel = position && typeof position === "object";
 
     const containerStyles = {
-      width: size?.width,
-      height: size?.height,
+      ...(size?.width && { width: size.width }),
+      ...(size?.height && { height: size.height }),
       zIndex: element_index,
       backgroundColor: is_transparent
         ? "transparent"
@@ -417,6 +422,7 @@ const StorefrontLayout = () => {
       paddingLeft: padding_left,
       paddingRight: padding_right,
       boxSizing: "border-box",
+      textAlign: text_align,
       // ...(isTopLevel && {
       //   position: "absolute",
       //   top: position.top,
@@ -464,7 +470,7 @@ const StorefrontLayout = () => {
                   boxSizing: "border-box",
                 }}
               >
-                {updatedElements?.length > 0
+                {shouldShowDynamicText
                   ? updatedElements?.[0]?.text
                   : props.text}
               </Typography>
