@@ -375,9 +375,18 @@ const StorefrontLayout = () => {
       position,
     } = element;
 
-    const shouldShowDynamicText =
-      element?.element_id === element?.props?.element_id &&
-      element?.props?.is_dynamic;
+    const shouldShowDynamicText = element?.props?.is_dynamic;
+
+    const matchedElement = updatedElements?.find((e) => {
+      // console.log(
+      //   "Checking element_id:",
+      //   e.element_id,
+      //   element?.props?.element_id
+      // );
+      return e.element_id === element?.props?.element_id;
+    });
+    // console.log("idx", element?.props?.element_id);
+    const dynamicText = matchedElement?.text;
 
     const {
       justify_content,
@@ -470,9 +479,7 @@ const StorefrontLayout = () => {
                   boxSizing: "border-box",
                 }}
               >
-                {shouldShowDynamicText
-                  ? updatedElements?.[0]?.text
-                  : props.text}
+                {shouldShowDynamicText ? dynamicText : props.text}
               </Typography>
             )}
 
@@ -657,8 +664,8 @@ const StorefrontLayout = () => {
                         alt={control.control_name}
                         title={control.control_name}
                         style={{
-                          width: 40,
-                          height: 40,
+                          width: 20,
+                          height: 20,
                           margin: 8,
                           cursor: "pointer",
                         }}
