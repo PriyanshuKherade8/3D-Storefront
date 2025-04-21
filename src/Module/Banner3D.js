@@ -517,6 +517,7 @@ const StorefrontLayout = () => {
                   backgroundColor: is_transparent
                     ? "transparent"
                     : background_color,
+                  ...(props.object_fit && { objectFit: props.object_fit }),
                 }}
               />
             )}
