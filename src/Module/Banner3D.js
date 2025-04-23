@@ -530,8 +530,8 @@ const StorefrontLayout = () => {
                   alt="ImageMap"
                   useMap="#map-test"
                   style={{
-                    width: "100%",
-                    height: "100%",
+                    width: element?.size?.width,
+                    height: element?.size?.height,
                     display: "block",
                     // objectFit: props.object_fit || "cover",
                     borderRadius: border_radius || 0,
