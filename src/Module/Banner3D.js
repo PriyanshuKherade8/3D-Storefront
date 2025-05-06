@@ -8,14 +8,39 @@ import {
 } from "../services";
 import { useLocation } from "react-router-dom";
 
-const getScreenTypeValue = (screenWidth, screenHeight) => {
+const getScreenTypeValue = (screenWidth, screenHeight, screenTypeDetails) => {
+  if (!screenTypeDetails || !Array.isArray(screenTypeDetails)) return null;
+
   const aspectRatio = screenWidth / screenHeight;
-  return aspectRatio >= 1 ? "01" : "02";
+
+  // Filter screen types that match the minimum width and aspect ratio conditions
+  const matchingScreenTypes = screenTypeDetails.filter((screenType) => {
+    const minWidth = parseFloat(screenType.minimum_width) || 0;
+    const aspectRatioLimit =
+      parseFloat(screenType.aspect_ratio_lower_limit) || 0;
+    return screenWidth >= minWidth && aspectRatio >= aspectRatioLimit;
+  });
+
+  if (matchingScreenTypes.length > 0) {
+    // If multiple matches, prioritize the one with highest minimum width
+    const sorted = matchingScreenTypes.sort(
+      (a, b) => parseFloat(b.minimum_width) - parseFloat(a.minimum_width)
+    );
+    return sorted[0].screen_type_id;
+  }
+
+  // Fallback: if no matches found, return default screen type
+  const defaultScreenType = screenTypeDetails.find((type) => type.is_default);
+  return defaultScreenType?.screen_type_id || null;
 };
 
 const StorefrontLayout = () => {
   const resizeObserverRef = useRef(null);
   const imageRef = useRef(null);
+  const screenRef = useRef({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
   const [scaledCoordsMap, setScaledCoordsMap] = useState({});
   const [imageLoaded, setImageLoaded] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState(null);
@@ -34,6 +59,8 @@ const StorefrontLayout = () => {
 
   const storefrontData = storeData?.data;
   const screenOverlayDetails = storefrontData?.storefront?.screen;
+
+  const screenTypeDetails = storefrontData?.storefront?.screen?.screen_type;
 
   const sessionID = storefrontData?.sessionID;
   const itemsData = storefrontData?.storefront?.items;
@@ -61,23 +88,25 @@ const StorefrontLayout = () => {
     };
   });
 
+  const { width, height } = screenRef.current;
+
   const [screenType, setScreenType] = useState(() =>
-    getScreenTypeValue(window.innerWidth, window.innerHeight)
+    getScreenTypeValue(width, height, screenTypeDetails)
   );
 
-  useEffect(() => {
-    const handleResize = () => {
-      const screenWidth = window.innerWidth;
-      const screenHeight = window.innerHeight;
-      const newType = getScreenTypeValue(screenWidth, screenHeight);
-      setScreenType(newType);
-    };
+  // useEffect(() => {
+  //   const handleResize = () => {
+  //     const screenWidth = window.innerWidth;
+  //     const screenHeight = window.innerHeight;
+  //     const newType = getScreenTypeValue(screenWidth, screenHeight);
+  //     setScreenType(newType);
+  //   };
 
-    window.addEventListener("resize", handleResize);
-    handleResize();
+  //   window.addEventListener("resize", handleResize);
+  //   handleResize();
 
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  //   return () => window.removeEventListener("resize", handleResize);
+  // }, []);
 
   const scalePolygonCoords = (
     originalCoords,
@@ -125,12 +154,37 @@ const StorefrontLayout = () => {
 
     setScaledCoordsMap(newCoordsMap);
   };
-
   useEffect(() => {
-    if (imageLoaded) updateScaledCoords();
-    window.addEventListener("resize", updateScaledCoords);
-    return () => window.removeEventListener("resize", updateScaledCoords);
-  }, [itemsData, screenType, imageLoaded]);
+    const handleResize = () => {
+      const screenWidth = window.innerWidth;
+      const screenHeight = window.innerHeight;
+      const newType = getScreenTypeValue(
+        screenWidth,
+        screenHeight,
+        screenTypeDetails
+      );
+      setScreenType(newType);
+
+      if (imageLoaded) {
+        updateScaledCoords();
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    // Call once initially
+    handleResize();
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [itemsData, screenType, imageLoaded]); // <- depends on these
+
+  // useEffect(() => {
+  //   if (imageLoaded) updateScaledCoords();
+  //   window.addEventListener("resize", updateScaledCoords);
+  //   return () => window.removeEventListener("resize", updateScaledCoords);
+  // }, [itemsData, screenType, imageLoaded]);
 
   useEffect(() => {
     if (!imageRef.current) return;
@@ -263,12 +317,24 @@ const StorefrontLayout = () => {
     );
   };
 
-  const pageLayout = generatePageLayout(
-    storefrontData,
-    screenType,
-    window.innerWidth,
-    window.innerHeight
-  );
+  useEffect(() => {
+    const { width, height } = screenRef.current;
+    const type = getScreenTypeValue(width, height, screenTypeDetails);
+    setScreenType(type);
+  }, [screenTypeDetails]);
+
+  const pageLayout = React.useMemo(() => {
+    if (!screenType) return null;
+    const { width, height } = screenRef.current;
+    return generatePageLayout(storefrontData, screenType, width, height);
+  }, [storefrontData, screenType]);
+
+  // const pageLayout = generatePageLayout(
+  //   storefrontData,
+  //   screenType,
+  //   screenRef?.current?.width,
+  //   screenRef?.current?.height
+  // );
 
   function updateTextElements(itemsData, selectedItemId, screenType) {
     const selectedItem = itemsData?.find(
@@ -492,6 +558,35 @@ const StorefrontLayout = () => {
               </Typography>
             )}
 
+            {type === "control" && (
+              <>
+                <Box display="flex">
+                  {controlsData?.map((control) => {
+                    const iconPath = getControlIconPath(
+                      control.control_icons,
+                      fileType
+                    );
+
+                    return (
+                      <img
+                        key={control.control_id}
+                        src={iconPath}
+                        alt={control.control_name}
+                        title={control.control_name}
+                        style={{
+                          width: "15px",
+                          height: "15px",
+                          margin: "3px",
+                          cursor: "pointer",
+                        }}
+                        onClick={() => handleControlClick(control)}
+                      />
+                    );
+                  })}
+                </Box>
+              </>
+            )}
+
             {type === "canvas" && (
               <iframe
                 id={`canvas-iframe`}
@@ -658,41 +753,13 @@ const StorefrontLayout = () => {
                 </map>
               </>
             )}
-            {type === "control" && (
-              <>
-                <Box display="flex">
-                  {controlsData?.map((control) => {
-                    const iconPath = getControlIconPath(
-                      control.control_icons,
-                      fileType
-                    );
-
-                    return (
-                      <img
-                        key={control.control_id}
-                        src={iconPath}
-                        alt={control.control_name}
-                        title={control.control_name}
-                        style={{
-                          width: 20,
-                          height: 20,
-                          margin: 8,
-                          cursor: "pointer",
-                        }}
-                        onClick={() => handleControlClick(control)}
-                      />
-                    );
-                  })}
-                </Box>
-              </>
-            )}
           </>
         )}
       </Grid>
     );
   };
 
-  return <Box>{pageLayout.map(renderElement)}</Box>;
+  return <Box>{pageLayout?.map(renderElement)}</Box>;
 };
 
 export default StorefrontLayout;
