@@ -6,7 +6,7 @@ import {
   useSetActionCall,
   useSetProductChangeCall,
 } from "../services";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 
 const getScreenTypeValue = (screenWidth, screenHeight, screenTypeDetails) => {
   if (!screenTypeDetails || !Array.isArray(screenTypeDetails)) return null;
@@ -35,6 +35,8 @@ const getScreenTypeValue = (screenWidth, screenHeight, screenTypeDetails) => {
 };
 
 const StorefrontLayout = () => {
+  const { id } = useParams();
+  console.log("id", id);
   const resizeObserverRef = useRef(null);
   const imageRef = useRef(null);
   const screenRef = useRef({
@@ -51,9 +53,10 @@ const StorefrontLayout = () => {
 
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const storefrontId = queryParams.get("storefront");
+  // const storefrontId = queryParams.get("storefront");
+  const storefrontId = id;
 
-  const { data: storeData } = useGetProductListData();
+  const { data: storeData } = useGetProductListData(id);
   const { mutate: changeViewCall } = useSetProductChangeCall();
   const { mutate: sendControlCall } = useSetActionCall();
 
@@ -428,7 +431,7 @@ const StorefrontLayout = () => {
   const hoverStyle = getSvgStyle("hover", screenOverlayDetails);
   const selectedStyle = getSvgStyle("selected", screenOverlayDetails);
 
-  const iframeUrl = `http://storefront.xculptor.io/?storefront=${storefrontId}&product=01&session=${sessionID}`;
+  const iframeUrl = `http://storefront.xculptor.io/?storefront=${id}&product=01&session=${sessionID}`;
 
   const renderElement = (element) => {
     const {
@@ -574,8 +577,8 @@ const StorefrontLayout = () => {
                         alt={control.control_name}
                         title={control.control_name}
                         style={{
-                          width: "15px",
-                          height: "15px",
+                          // width: "15px",
+                          // height: "15px",
                           margin: "3px",
                           cursor: "pointer",
                         }}
