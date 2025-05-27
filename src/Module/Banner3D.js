@@ -9,28 +9,46 @@ import {
 import { useLocation, useParams } from "react-router-dom";
 
 const getScreenTypeValue = (screenWidth, screenHeight, screenTypeDetails) => {
-  if (!screenTypeDetails || !Array.isArray(screenTypeDetails)) return null;
+  if (
+    !screenTypeDetails ||
+    !Array.isArray(screenTypeDetails) ||
+    screenTypeDetails.length === 0
+  ) {
+    // console.warn("screenTypeDetails is invalid or empty. Returning null.");
+    return null;
+  }
 
   const aspectRatio = screenWidth / screenHeight;
+  // console.log("Current Screen Dimensions:", screenWidth, "x", screenHeight);
+  // console.log("Calculated Aspect Ratio:", aspectRatio);
 
-  // Filter screen types that match the minimum width and aspect ratio conditions
   const matchingScreenTypes = screenTypeDetails.filter((screenType) => {
     const minWidth = parseFloat(screenType.minimum_width) || 0;
-    const aspectRatioLimit =
+    const aspectRatioLowerLimit =
       parseFloat(screenType.aspect_ratio_lower_limit) || 0;
-    return screenWidth >= minWidth && aspectRatio >= aspectRatioLimit;
+
+    const matchesWidth = screenWidth >= minWidth;
+    const matchesAspectRatio = aspectRatio >= aspectRatioLowerLimit;
+
+    return matchesWidth && matchesAspectRatio;
   });
 
   if (matchingScreenTypes.length > 0) {
-    // If multiple matches, prioritize the one with highest minimum width
     const sorted = matchingScreenTypes.sort(
       (a, b) => parseFloat(b.minimum_width) - parseFloat(a.minimum_width)
     );
+    // console.log(
+    //   "Matching screen types found (sorted by min_width):",
+    //   sorted.map((s) => s.screen_type_name)
+    // );
     return sorted[0].screen_type_id;
   }
 
-  // Fallback: if no matches found, return default screen type
   const defaultScreenType = screenTypeDetails.find((type) => type.is_default);
+  // console.log(
+  //   "No specific match found. Falling back to default:",
+  //   defaultScreenType?.screen_type_name || "None"
+  // );
   return defaultScreenType?.screen_type_id || null;
 };
 
@@ -63,7 +81,30 @@ const StorefrontLayout = () => {
   const storefrontData = storeData?.data;
   const screenOverlayDetails = storefrontData?.storefront?.screen;
 
-  const screenTypeDetails = storefrontData?.storefront?.screen?.screen_type;
+  // const screenTypeDetails = storefrontData?.storefront?.screen?.screen_type;
+  const screenTypeDetails = [
+    {
+      screen_type_id: "01",
+      screen_type_name: "DESKTOP",
+      aspect_ratio_lower_limit: "1.0",
+      minimum_width: "1024",
+      is_default: true,
+    },
+    {
+      screen_type_id: "03",
+      screen_type_name: "LAPTOP",
+      aspect_ratio_lower_limit: "1.0",
+      minimum_width: "600",
+      is_default: false,
+    },
+    {
+      screen_type_id: "02",
+      screen_type_name: "MOBILE",
+      aspect_ratio_lower_limit: "0.0",
+      minimum_width: "0",
+      is_default: false,
+    },
+  ];
 
   const sessionID = storefrontData?.sessionID;
   const itemsData = storefrontData?.storefront?.items;
@@ -331,6 +372,8 @@ const StorefrontLayout = () => {
     const { width, height } = screenRef.current;
     return generatePageLayout(storefrontData, screenType, width, height);
   }, [storefrontData, screenType]);
+
+  console.log("pageLayout", pageLayout, screenType);
 
   // const pageLayout = generatePageLayout(
   //   storefrontData,
