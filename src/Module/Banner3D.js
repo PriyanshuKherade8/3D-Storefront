@@ -138,20 +138,6 @@ const StorefrontLayout = () => {
     getScreenTypeValue(width, height, screenTypeDetails)
   );
 
-  // useEffect(() => {
-  //   const handleResize = () => {
-  //     const screenWidth = window.innerWidth;
-  //     const screenHeight = window.innerHeight;
-  //     const newType = getScreenTypeValue(screenWidth, screenHeight);
-  //     setScreenType(newType);
-  //   };
-
-  //   window.addEventListener("resize", handleResize);
-  //   handleResize();
-
-  //   return () => window.removeEventListener("resize", handleResize);
-  // }, []);
-
   const scalePolygonCoords = (
     originalCoords,
     naturalWidth,
@@ -224,12 +210,6 @@ const StorefrontLayout = () => {
     };
   }, [itemsData, screenType, imageLoaded]); // <- depends on these
 
-  // useEffect(() => {
-  //   if (imageLoaded) updateScaledCoords();
-  //   window.addEventListener("resize", updateScaledCoords);
-  //   return () => window.removeEventListener("resize", updateScaledCoords);
-  // }, [itemsData, screenType, imageLoaded]);
-
   useEffect(() => {
     if (!imageRef.current) return;
 
@@ -268,24 +248,53 @@ const StorefrontLayout = () => {
     };
   }, [itemsData, screenType]);
 
-  const getValueByScreenType = (dataArray, screenTypeId) =>
-    Array.isArray(dataArray)
-      ? dataArray.find((item) => item.screen_type_id === screenTypeId) || null
-      : null;
+  const getValueByScreenType = (
+    dataArray,
+    screenTypeId,
+    defaultScreenTypeId = null
+  ) => {
+    if (!Array.isArray(dataArray) || dataArray.length === 0) {
+      return null;
+    }
 
-  const getPropValue = (dataArray, screenTypeId, fallback = null) => {
-    const match = getValueByScreenType(dataArray, screenTypeId);
+    let match = dataArray.find((item) => item.screen_type_id === screenTypeId);
+
+    if (!match && defaultScreenTypeId) {
+      match = dataArray.find(
+        (item) => item.screen_type_id === defaultScreenTypeId
+      );
+    }
+
+    return match || null;
+  };
+
+  const getPropValue = (
+    dataArray,
+    screenTypeId,
+    defaultScreenTypeId,
+    fallback = null
+  ) => {
+    const match = getValueByScreenType(
+      dataArray,
+      screenTypeId,
+      defaultScreenTypeId
+    );
     return match?.value ?? match?.path ?? fallback;
   };
 
-  const extractElementProps = (element, screenTypeId) => {
+  const extractElementProps = (element, screenTypeId, defaultScreenTypeId) => {
     const props = {};
 
     for (const key in element) {
       const val = element[key];
 
       if (Array.isArray(val) && val.length > 0 && val[0]?.screen_type_id) {
-        const resolved = getPropValue(val, screenTypeId, null);
+        const resolved = getPropValue(
+          val,
+          screenTypeId,
+          defaultScreenTypeId,
+          null
+        );
         if (resolved !== null) props[key] = resolved;
       } else if (
         typeof val === "object" &&
@@ -293,7 +302,16 @@ const StorefrontLayout = () => {
         !Array.isArray(val) &&
         Object.values(val).some((v) => v?.screen_type_id)
       ) {
-        const resolved = getPropValue(Object.values(val), screenTypeId, null);
+        const formattedVal = Object.entries(val).map(([id, data]) => ({
+          screen_type_id: id,
+          value: data.value,
+        }));
+        const resolved = getPropValue(
+          formattedVal,
+          screenTypeId,
+          defaultScreenTypeId,
+          null
+        );
         if (resolved !== null) props[key] = resolved;
       } else if (
         typeof val === "string" ||
@@ -310,12 +328,17 @@ const StorefrontLayout = () => {
   const computeElementLayout = (
     element,
     screenTypeId,
+    defaultScreenTypeId,
     parentWidth,
     parentHeight,
     elementIndex = 0,
     isChild = false
   ) => {
-    const sizeObj = getValueByScreenType(element.size, screenTypeId);
+    const sizeObj = getValueByScreenType(
+      element.size,
+      screenTypeId,
+      defaultScreenTypeId
+    );
     const width = parseFloat(sizeObj?.x || 0) * parentWidth;
     const height = parseFloat(sizeObj?.y || 0) * parentHeight;
 
@@ -324,11 +347,15 @@ const StorefrontLayout = () => {
       type: element.type,
       size: { width, height },
       element_index: elementIndex,
-      props: extractElementProps(element, screenTypeId),
+      props: extractElementProps(element, screenTypeId, defaultScreenTypeId),
     };
 
     if (!isChild) {
-      const positionObj = getValueByScreenType(element.position, screenTypeId);
+      const positionObj = getValueByScreenType(
+        element.position,
+        screenTypeId,
+        defaultScreenTypeId
+      );
       const top = parseFloat(positionObj?.top || 0) * parentHeight;
       const left = parseFloat(positionObj?.left || 0) * parentWidth;
       layout.position = { top, left };
@@ -336,16 +363,28 @@ const StorefrontLayout = () => {
 
     if (Array.isArray(element.children) && element.children.length > 0) {
       layout.children = element.children.map((child, index) =>
-        computeElementLayout(child, screenTypeId, width, height, index, true)
+        computeElementLayout(
+          child,
+          screenTypeId,
+          defaultScreenTypeId,
+          width,
+          height,
+          index,
+          true
+        )
       );
     }
 
     return layout;
   };
 
+  const defaultScreenType = screenTypeDetails.find((type) => type.is_default);
+  const defaultScreenTypeId = defaultScreenType?.screen_type_id || null;
+
   const generatePageLayout = (
     storefrontData,
     screenTypeId,
+    defaultScreenTypeId,
     innerWidth,
     innerHeight
   ) => {
@@ -354,6 +393,7 @@ const StorefrontLayout = () => {
       computeElementLayout(
         element,
         screenTypeId,
+        defaultScreenTypeId,
         innerWidth,
         innerHeight,
         index
@@ -370,17 +410,16 @@ const StorefrontLayout = () => {
   const pageLayout = React.useMemo(() => {
     if (!screenType) return null;
     const { width, height } = screenRef.current;
-    return generatePageLayout(storefrontData, screenType, width, height);
-  }, [storefrontData, screenType]);
+    return generatePageLayout(
+      storefrontData,
+      screenType,
+      defaultScreenTypeId,
+      width,
+      height
+    );
+  }, [storefrontData, screenType, defaultScreenTypeId]);
 
   console.log("pageLayout", pageLayout, screenType);
-
-  // const pageLayout = generatePageLayout(
-  //   storefrontData,
-  //   screenType,
-  //   screenRef?.current?.width,
-  //   screenRef?.current?.height
-  // );
 
   function updateTextElements(itemsData, selectedItemId, screenType) {
     const selectedItem = itemsData?.find(
