@@ -81,30 +81,7 @@ const StorefrontLayout = () => {
   const storefrontData = storeData?.data;
   const screenOverlayDetails = storefrontData?.storefront?.screen;
 
-  // const screenTypeDetails = storefrontData?.storefront?.screen?.screen_type;
-  const screenTypeDetails = [
-    {
-      screen_type_id: "01",
-      screen_type_name: "DESKTOP",
-      aspect_ratio_lower_limit: "1.0",
-      minimum_width: "1024",
-      is_default: true,
-    },
-    {
-      screen_type_id: "03",
-      screen_type_name: "LAPTOP",
-      aspect_ratio_lower_limit: "1.0",
-      minimum_width: "600",
-      is_default: false,
-    },
-    {
-      screen_type_id: "02",
-      screen_type_name: "MOBILE",
-      aspect_ratio_lower_limit: "0.0",
-      minimum_width: "0",
-      is_default: false,
-    },
-  ];
+  const screenTypeDetails = storefrontData?.storefront?.screen?.screen_type;
 
   const sessionID = storefrontData?.sessionID;
   const itemsData = storefrontData?.storefront?.items;
@@ -378,7 +355,7 @@ const StorefrontLayout = () => {
     return layout;
   };
 
-  const defaultScreenType = screenTypeDetails.find((type) => type.is_default);
+  const defaultScreenType = screenTypeDetails?.find((type) => type.is_default);
   const defaultScreenTypeId = defaultScreenType?.screen_type_id || null;
 
   const generatePageLayout = (
