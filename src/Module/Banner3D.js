@@ -38,16 +38,16 @@ const getScreenTypeValue = (screenWidth, screenHeight, screenTypeDetails) => {
       (a, b) => parseFloat(b.minimum_width) - parseFloat(a.minimum_width)
     );
     // console.log(
-    //   "Matching screen types found (sorted by min_width):",
-    //   sorted.map((s) => s.screen_type_name)
+    //   "Matching screen types found (sorted by min_width):",
+    //   sorted.map((s) => s.screen_type_name)
     // );
     return sorted[0].screen_type_id;
   }
 
   const defaultScreenType = screenTypeDetails.find((type) => type.is_default);
   // console.log(
-  //   "No specific match found. Falling back to default:",
-  //   defaultScreenType?.screen_type_name || "None"
+  //   "No specific match found. Falling back to default:",
+  //   defaultScreenType?.screen_type_name || "None"
   // );
   return defaultScreenType?.screen_type_id || null;
 };
@@ -96,10 +96,9 @@ const StorefrontLayout = () => {
 
   const convertedItemsData = itemsData?.map((item) => {
     const convertedMaps = item?.map.map((screen) => {
-      const coordsString = screen.values.join(", ");
       return {
         screen_type_id: screen.screen_type_id,
-        coords: coordsString,
+        values: screen.values,
       };
     });
 
@@ -132,17 +131,37 @@ const StorefrontLayout = () => {
     return scaled;
   };
 
+  // --- Aspect Ratio Calculation ---
   const updateScaledCoords = () => {
     if (!imageRef.current) return;
 
-    const currentWidth = imageRef.current.clientWidth;
-    const currentHeight = imageRef.current.clientHeight;
-    const naturalWidth = imageRef.current.naturalWidth;
-    const naturalHeight = imageRef.current.naturalHeight;
+    const img = imageRef.current;
+    const naturalWidth = img.naturalWidth;
+    const naturalHeight = img.naturalHeight;
 
     if (!naturalWidth || !naturalHeight) return;
 
-    setImageSize({ width: currentWidth, height: currentHeight });
+    const parentContainer = img.parentElement;
+    if (!parentContainer) return;
+
+    const containerWidth = parentContainer.clientWidth;
+    const containerHeight = parentContainer.clientHeight;
+
+    const naturalAspectRatio = naturalWidth / naturalHeight;
+    const containerAspectRatio = containerWidth / containerHeight;
+
+    let calculatedWidth = 0;
+    let calculatedHeight = 0;
+
+    if (containerAspectRatio > naturalAspectRatio) {
+      calculatedHeight = containerHeight;
+      calculatedWidth = containerHeight * naturalAspectRatio;
+    } else {
+      calculatedWidth = containerWidth;
+      calculatedHeight = containerWidth / naturalAspectRatio;
+    }
+
+    setImageSize({ width: calculatedWidth, height: calculatedHeight });
 
     const newCoordsMap = {};
     itemsData?.forEach((item) => {
@@ -153,14 +172,15 @@ const StorefrontLayout = () => {
         mapEntry.values,
         naturalWidth,
         naturalHeight,
-        currentWidth,
-        currentHeight
+        calculatedWidth,
+        calculatedHeight
       );
       newCoordsMap[item.item_id] = scaled.join(",");
     });
 
     setScaledCoordsMap(newCoordsMap);
   };
+
   useEffect(() => {
     const handleResize = () => {
       const screenWidth = window.innerWidth;
@@ -179,46 +199,21 @@ const StorefrontLayout = () => {
 
     window.addEventListener("resize", handleResize);
 
-    // Call once initially
     handleResize();
 
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [itemsData, screenType, imageLoaded]); // <- depends on these
+  }, [screenTypeDetails, imageLoaded]);
 
   useEffect(() => {
     if (!imageRef.current) return;
 
     resizeObserverRef.current = new ResizeObserver(() => {
-      const img = imageRef.current;
-      if (!img || !img.naturalWidth || !img.naturalHeight) return;
-
-      const currentWidth = img.clientWidth;
-      const currentHeight = img.clientHeight;
-
-      setImageSize({ width: currentWidth, height: currentHeight });
-
-      const newCoordsMap = {};
-      itemsData?.forEach((item) => {
-        const mapEntry = item.map.find((m) => m.screen_type_id === screenType);
-        if (!mapEntry || !Array.isArray(mapEntry.values)) return;
-
-        const scaled = scalePolygonCoords(
-          mapEntry.values,
-          img.naturalWidth,
-          img.naturalHeight,
-          currentWidth,
-          currentHeight
-        );
-
-        newCoordsMap[item.item_id] = scaled.join(",");
-      });
-
-      setScaledCoordsMap(newCoordsMap);
+      updateScaledCoords();
     });
 
-    resizeObserverRef.current.observe(imageRef.current);
+    resizeObserverRef.current.observe(imageRef.current.parentElement);
 
     return () => {
       resizeObserverRef.current?.disconnect();
@@ -434,7 +429,7 @@ const StorefrontLayout = () => {
     return icon?.path || "";
   };
 
-  const [controlStates, setControlStates] = useState(
+  const [controlStates, setControlStates] = useState(() =>
     controlsData?.reduce((acc, control) => {
       acc[control.control_id] = control.default_value === "true";
       return acc;
@@ -503,17 +498,6 @@ const StorefrontLayout = () => {
       position,
     } = element;
 
-    // const shouldShowDynamicText = element?.props?.is_dynamic;
-
-    // const matchedElement = updatedElements?.find((e) => {
-    //   // console.log(
-    //   //   "Checking element_id:",
-    //   //   e.element_id,
-    //   //   element?.props?.element_id
-    //   // );
-    //   return e.element_id === element?.props?.element_id;
-    // });
-    // console.log("idx", element?.props?.element_id);
     let dynamicText = props.text;
 
     const matchedElement = updatedElements?.find(
@@ -568,11 +552,6 @@ const StorefrontLayout = () => {
       paddingRight: padding_right,
       boxSizing: "border-box",
       textAlign: text_align,
-      // ...(isTopLevel && {
-      //   position: "absolute",
-      //   top: position.top,
-      //   left: position.left,
-      // }),
       position: isTopLevel ? "absolute" : "relative",
       ...(isTopLevel && {
         top: position.top,
@@ -615,38 +594,33 @@ const StorefrontLayout = () => {
                   boxSizing: "border-box",
                 }}
               >
-                {/* {shouldShowDynamicText ? dynamicText : props.text} */}
                 {dynamicText}
               </Typography>
             )}
 
             {type === "control" && (
-              <>
-                <Box display="flex">
-                  {controlsData?.map((control) => {
-                    const iconPath = getControlIconPath(
-                      control.control_icons,
-                      fileType
-                    );
+              <Box display="flex">
+                {controlsData?.map((control) => {
+                  const iconPath = getControlIconPath(
+                    control.control_icons,
+                    fileType
+                  );
 
-                    return (
-                      <img
-                        key={control.control_id}
-                        src={iconPath}
-                        alt={control.control_name}
-                        title={control.control_name}
-                        style={{
-                          // width: "15px",
-                          // height: "15px",
-                          margin: "3px",
-                          cursor: "pointer",
-                        }}
-                        onClick={() => handleControlClick(control)}
-                      />
-                    );
-                  })}
-                </Box>
-              </>
+                  return (
+                    <img
+                      key={control.control_id}
+                      src={iconPath}
+                      alt={control.control_name}
+                      title={control.control_name}
+                      style={{
+                        margin: "3px",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => handleControlClick(control)}
+                    />
+                  );
+                })}
+              </Box>
             )}
 
             {type === "canvas" && (
@@ -681,16 +655,15 @@ const StorefrontLayout = () => {
 
             {type === "imagemap" && (
               <>
-                <img
-                  ref={imageRef}
-                  src={props.path}
-                  alt="ImageMap"
-                  useMap="#map-test"
-                  style={{
-                    width: element?.size?.width,
-                    height: element?.size?.height,
-                    display: "block",
-                    // objectFit: props.object_fit || "cover",
+                <Box
+                  sx={{
+                    position: "relative",
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    overflow: "hidden",
                     borderRadius: border_radius || 0,
                     border: is_border
                       ? `${border || 1}px solid ${border_color || "#000"}`
@@ -699,70 +672,119 @@ const StorefrontLayout = () => {
                       ? "transparent"
                       : background_color,
                   }}
-                  onLoad={() => setImageLoaded(true)}
-                />
-
-                <Box
-                  sx={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: `${imageSize.width}px`,
-                    height: `${imageSize.height}px`,
-                    pointerEvents: "none",
-                    zIndex: 10,
-                  }}
                 >
-                  <svg
-                    width={imageSize.width}
-                    height={imageSize.height}
-                    viewBox={`0 0 ${imageSize.width} ${imageSize.height}`}
-                    xmlns="http://www.w3.org/2000/svg"
-                    style={{ position: "absolute", top: 0, left: 0 }}
+                  <img
+                    ref={imageRef}
+                    src={props.path}
+                    alt="ImageMap"
+                    useMap="#map-test"
+                    style={{
+                      width: imageSize.width,
+                      height: imageSize.height,
+                      display: "block",
+                    }}
+                    onLoad={() => {
+                      setImageLoaded(true);
+                      updateScaledCoords();
+                    }}
+                  />
+
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      width: `${imageSize.width}px`,
+                      height: `${imageSize.height}px`,
+                      pointerEvents: "none",
+                      zIndex: 10,
+                    }}
                   >
+                    <svg
+                      width={imageSize.width}
+                      height={imageSize.height}
+                      viewBox={`0 0 ${imageSize.width} ${imageSize.height}`}
+                      xmlns="http://www.w3.org/2000/svg"
+                      style={{ position: "absolute", top: 0, left: 0 }}
+                    >
+                      {convertedItemsData?.map((item) => {
+                        const coords = scaledCoordsMap[item.item_id];
+                        if (!coords) return null;
+
+                        const coordsArray = coords.split(",").map(Number);
+                        const points = [];
+                        for (let i = 0; i < coordsArray.length; i += 2) {
+                          points.push(
+                            `${coordsArray[i]},${coordsArray[i + 1]}`
+                          );
+                        }
+
+                        const isHovered = hoveredItemId === item.item_id;
+                        const isSelected = item.item_id === selectedItemId;
+
+                        return (
+                          <polygon
+                            key={item.item_id}
+                            points={points.join(" ")}
+                            onMouseEnter={() => setHoveredItemId(item.item_id)}
+                            onMouseLeave={() => setHoveredItemId(null)}
+                            style={{
+                              fill: isHovered
+                                ? hoverStyle.fill
+                                : isSelected
+                                ? selectedStyle.fill
+                                : "rgba(0,0,0,0)",
+                              fillOpacity: isHovered
+                                ? hoverStyle.fillOpacity
+                                : isSelected
+                                ? selectedStyle.fillOpacity
+                                : 0,
+                              stroke: isSelected
+                                ? selectedStyle.stroke
+                                : isHovered
+                                ? hoverStyle.stroke
+                                : "transparent",
+                              strokeWidth: isSelected
+                                ? selectedStyle.strokeWidth
+                                : isHovered
+                                ? hoverStyle.strokeWidth
+                                : 0,
+                              pointerEvents: "auto",
+                              cursor: "pointer",
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setSelectedItemId(item.item_id);
+
+                              const payload = {
+                                session_id: sessionID,
+                                message: {
+                                  type: "change_item",
+                                  message: { item_id: item.item_id },
+                                },
+                              };
+
+                              changeViewCall(payload);
+                            }}
+                          />
+                        );
+                      })}
+                    </svg>
+                  </Box>
+
+                  <map name="map-test">
                     {convertedItemsData?.map((item) => {
                       const coords = scaledCoordsMap[item.item_id];
                       if (!coords) return null;
-
-                      const coordsArray = coords.split(",").map(Number);
-                      const points = [];
-                      for (let i = 0; i < coordsArray.length; i += 2) {
-                        points.push(`${coordsArray[i]},${coordsArray[i + 1]}`);
-                      }
-
-                      const isHovered = hoveredItemId === item.item_id;
-                      const isSelected = item.item_id === selectedItemId;
-
                       return (
-                        <polygon
+                        <area
                           key={item.item_id}
-                          points={points.join(" ")}
-                          onMouseEnter={() => setHoveredItemId(item.item_id)}
-                          onMouseLeave={() => setHoveredItemId(null)}
-                          style={{
-                            fill: isHovered
-                              ? hoverStyle.fill
-                              : isSelected
-                              ? selectedStyle.fill
-                              : "rgba(0,0,0,0)",
-                            fillOpacity: isHovered
-                              ? hoverStyle.fillOpacity
-                              : isSelected
-                              ? selectedStyle.fillOpacity
-                              : 0,
-                            stroke: isSelected
-                              ? selectedStyle.stroke
-                              : isHovered
-                              ? hoverStyle.stroke
-                              : "transparent",
-                            strokeWidth: isSelected
-                              ? selectedStyle.strokeWidth
-                              : isHovered
-                              ? hoverStyle.strokeWidth
-                              : 0,
-                            pointerEvents: "auto",
-                            cursor: "pointer",
-                          }}
+                          shape="poly"
+                          coords={coords}
+                          href="#"
+                          alt="Test Hotspot"
+                          style={{ cursor: "pointer" }}
                           onClick={(e) => {
                             e.preventDefault();
                             setSelectedItemId(item.item_id);
@@ -780,39 +802,8 @@ const StorefrontLayout = () => {
                         />
                       );
                     })}
-                  </svg>
+                  </map>
                 </Box>
-
-                <map name="map-test">
-                  {convertedItemsData?.map((item) => {
-                    const coords = scaledCoordsMap[item.item_id];
-                    if (!coords) return null;
-                    return (
-                      <area
-                        key={item.item_id}
-                        shape="poly"
-                        coords={coords}
-                        href="#"
-                        alt="Test Hotspot"
-                        style={{ cursor: "pointer" }}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setSelectedItemId(item.item_id);
-
-                          const payload = {
-                            session_id: sessionID,
-                            message: {
-                              type: "change_item",
-                              message: { item_id: item.item_id },
-                            },
-                          };
-
-                          changeViewCall(payload);
-                        }}
-                      />
-                    );
-                  })}
-                </map>
               </>
             )}
           </>

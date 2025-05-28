@@ -5,7 +5,7 @@ import { useLocation, useParams } from "react-router-dom";
 export const useGetProductListData = (id) => {
   const { data, error, isLoading } = useQuery({
     queryKey: ["allData", id],
-    queryFn: () => httpClient.get(`get_storefront?storefront=${id}`),
+    queryFn: () => httpClient.get(`get_storefront?url_id=${id}`),
     enabled: !!id,
     refetchOnWindowFocus: false,
   });
