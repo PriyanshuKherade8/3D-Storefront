@@ -54,13 +54,14 @@ const getScreenTypeValue = (screenWidth, screenHeight, screenTypeDetails) => {
 
 const StorefrontLayout = () => {
   const { id } = useParams();
-  console.log("id", id);
   const resizeObserverRef = useRef(null);
   const imageRef = useRef(null);
+
   const screenRef = useRef({
     width: window.innerWidth,
     height: window.innerHeight,
   });
+
   const [scaledCoordsMap, setScaledCoordsMap] = useState({});
   const [imageLoaded, setImageLoaded] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState(null);
@@ -70,8 +71,6 @@ const StorefrontLayout = () => {
   const [hoveredItemId, setHoveredItemId] = useState(null);
 
   const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  // const storefrontId = queryParams.get("storefront");
   const storefrontId = id;
 
   const { data: storeData } = useGetProductListData(id);
@@ -80,7 +79,6 @@ const StorefrontLayout = () => {
 
   const storefrontData = storeData?.data;
   const screenOverlayDetails = storefrontData?.storefront?.screen;
-
   const screenTypeDetails = storefrontData?.storefront?.screen?.screen_type;
 
   const sessionID = storefrontData?.sessionID;
@@ -108,12 +106,17 @@ const StorefrontLayout = () => {
     };
   });
 
-  const { width, height } = screenRef.current;
-
   const [screenType, setScreenType] = useState(() =>
-    getScreenTypeValue(width, height, screenTypeDetails)
+    getScreenTypeValue(window.innerWidth, window.innerHeight, screenTypeDetails)
   );
 
+  const [calculatedPageLayoutDimensions, setCalculatedPageLayoutDimensions] =
+    useState({
+      width: 0,
+      height: 0,
+    });
+
+  console.log("calculatedPageLayoutDimensions", calculatedPageLayoutDimensions);
   const scalePolygonCoords = (
     originalCoords,
     naturalWidth,
@@ -131,7 +134,6 @@ const StorefrontLayout = () => {
     return scaled;
   };
 
-  // --- Aspect Ratio Calculation ---
   const updateScaledCoords = () => {
     if (!imageRef.current) return;
 
@@ -150,18 +152,18 @@ const StorefrontLayout = () => {
     const naturalAspectRatio = naturalWidth / naturalHeight;
     const containerAspectRatio = containerWidth / containerHeight;
 
-    let calculatedWidth = 0;
-    let calculatedHeight = 0;
+    let imgCalculatedWidth = 0;
+    let imgCalculatedHeight = 0;
 
     if (containerAspectRatio > naturalAspectRatio) {
-      calculatedHeight = containerHeight;
-      calculatedWidth = containerHeight * naturalAspectRatio;
+      imgCalculatedHeight = containerHeight;
+      imgCalculatedWidth = containerHeight * naturalAspectRatio;
     } else {
-      calculatedWidth = containerWidth;
-      calculatedHeight = containerWidth / naturalAspectRatio;
+      imgCalculatedWidth = containerWidth;
+      imgCalculatedHeight = containerWidth / naturalAspectRatio;
     }
 
-    setImageSize({ width: calculatedWidth, height: calculatedHeight });
+    setImageSize({ width: imgCalculatedWidth, height: imgCalculatedHeight });
 
     const newCoordsMap = {};
     itemsData?.forEach((item) => {
@@ -172,8 +174,8 @@ const StorefrontLayout = () => {
         mapEntry.values,
         naturalWidth,
         naturalHeight,
-        calculatedWidth,
-        calculatedHeight
+        imgCalculatedWidth,
+        imgCalculatedHeight
       );
       newCoordsMap[item.item_id] = scaled.join(",");
     });
@@ -183,14 +185,45 @@ const StorefrontLayout = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      const screenWidth = window.innerWidth;
-      const screenHeight = window.innerHeight;
-      const newType = getScreenTypeValue(
-        screenWidth,
-        screenHeight,
+      const currentWindowWidth = window.innerWidth;
+      const currentWindowHeight = window.innerHeight;
+
+      screenRef.current = {
+        width: currentWindowWidth,
+        height: currentWindowHeight,
+      };
+
+      const newScreenType = getScreenTypeValue(
+        currentWindowWidth,
+        currentWindowHeight,
         screenTypeDetails
       );
-      setScreenType(newType);
+      setScreenType(newScreenType);
+
+      const currentScreenTypeConfig = screenTypeDetails?.find(
+        (type) => type.screen_type_id === newScreenType
+      );
+
+      const storefrontAspectRatio =
+        parseFloat(currentScreenTypeConfig?.storefront_aspect_ratio) || 1;
+
+      let newCalculatedWidth = 0;
+      let newCalculatedHeight = 0;
+
+      const windowAspectRatio = currentWindowWidth / currentWindowHeight;
+
+      if (windowAspectRatio > storefrontAspectRatio) {
+        newCalculatedHeight = currentWindowHeight;
+        newCalculatedWidth = currentWindowHeight * storefrontAspectRatio;
+      } else {
+        newCalculatedWidth = currentWindowWidth;
+        newCalculatedHeight = currentWindowWidth / storefrontAspectRatio;
+      }
+
+      setCalculatedPageLayoutDimensions({
+        width: newCalculatedWidth,
+        height: newCalculatedHeight,
+      });
 
       if (imageLoaded) {
         updateScaledCoords();
@@ -207,7 +240,9 @@ const StorefrontLayout = () => {
   }, [screenTypeDetails, imageLoaded]);
 
   useEffect(() => {
-    if (!imageRef.current) return;
+    if (!imageRef.current || !imageRef.current.parentElement) return;
+
+    resizeObserverRef.current?.disconnect();
 
     resizeObserverRef.current = new ResizeObserver(() => {
       updateScaledCoords();
@@ -218,7 +253,7 @@ const StorefrontLayout = () => {
     return () => {
       resizeObserverRef.current?.disconnect();
     };
-  }, [itemsData, screenType]);
+  }, [itemsData, screenType, imageLoaded, calculatedPageLayoutDimensions]);
 
   const getValueByScreenType = (
     dataArray,
@@ -246,11 +281,7 @@ const StorefrontLayout = () => {
     defaultScreenTypeId,
     fallback = null
   ) => {
-    const match = getValueByScreenType(
-      dataArray,
-      screenTypeId,
-      defaultScreenTypeId
-    );
+    const match = getValueByScreenType(dataArray, screenTypeId);
     return match?.value ?? match?.path ?? fallback;
   };
 
@@ -276,7 +307,7 @@ const StorefrontLayout = () => {
       ) {
         const formattedVal = Object.entries(val).map(([id, data]) => ({
           screen_type_id: id,
-          value: data.value,
+          value: data.value !== undefined ? data.value : data.path,
         }));
         const resolved = getPropValue(
           formattedVal,
@@ -293,7 +324,6 @@ const StorefrontLayout = () => {
         props[key] = val;
       }
     }
-
     return props;
   };
 
@@ -311,8 +341,9 @@ const StorefrontLayout = () => {
       screenTypeId,
       defaultScreenTypeId
     );
-    const width = parseFloat(sizeObj?.x || 0) * parentWidth;
-    const height = parseFloat(sizeObj?.y || 0) * parentHeight;
+
+    const width = (parseFloat(sizeObj?.x) || 0) * parentWidth;
+    const height = (parseFloat(sizeObj?.y) || 0) * parentHeight;
 
     const layout = {
       element_id: element.element_id,
@@ -328,8 +359,9 @@ const StorefrontLayout = () => {
         screenTypeId,
         defaultScreenTypeId
       );
-      const top = parseFloat(positionObj?.top || 0) * parentHeight;
-      const left = parseFloat(positionObj?.left || 0) * parentWidth;
+
+      const top = (parseFloat(positionObj?.top) || 0) * parentHeight;
+      const left = (parseFloat(positionObj?.left) || 0) * parentWidth;
       layout.position = { top, left };
     }
 
@@ -373,15 +405,15 @@ const StorefrontLayout = () => {
     );
   };
 
-  useEffect(() => {
-    const { width, height } = screenRef.current;
-    const type = getScreenTypeValue(width, height, screenTypeDetails);
-    setScreenType(type);
-  }, [screenTypeDetails]);
-
   const pageLayout = React.useMemo(() => {
-    if (!screenType) return null;
-    const { width, height } = screenRef.current;
+    if (
+      !screenType ||
+      calculatedPageLayoutDimensions.width === 0 ||
+      calculatedPageLayoutDimensions.height === 0
+    ) {
+      return null;
+    }
+    const { width, height } = calculatedPageLayoutDimensions;
     return generatePageLayout(
       storefrontData,
       screenType,
@@ -389,9 +421,12 @@ const StorefrontLayout = () => {
       width,
       height
     );
-  }, [storefrontData, screenType, defaultScreenTypeId]);
-
-  console.log("pageLayout", pageLayout, screenType);
+  }, [
+    storefrontData,
+    screenType,
+    defaultScreenTypeId,
+    calculatedPageLayoutDimensions,
+  ]);
 
   function updateTextElements(itemsData, selectedItemId, screenType) {
     const selectedItem = itemsData?.find(
@@ -412,7 +447,6 @@ const StorefrontLayout = () => {
           text: displayText,
         };
       }
-
       return element;
     });
   }
@@ -424,6 +458,7 @@ const StorefrontLayout = () => {
   );
 
   const fileType = screenType === "01" ? "L" : "S";
+
   const getControlIconPath = (icons, fileType) => {
     const icon = icons.find((icon) => icon.file_type === fileType);
     return icon?.path || "";
@@ -485,7 +520,10 @@ const StorefrontLayout = () => {
   const hoverStyle = getSvgStyle("hover", screenOverlayDetails);
   const selectedStyle = getSvgStyle("selected", screenOverlayDetails);
 
-  const iframeUrl = `http://storefront.xculptor.io/?storefront=${id}&product=01&session=${sessionID}`;
+  const iframeUrl =
+    sessionID && storefrontId
+      ? `http://storefront.xculptor.io/?storefront=${storefrontId}&product=01&session=${sessionID}`
+      : "";
 
   const renderElement = (element) => {
     const {
@@ -631,12 +669,13 @@ const StorefrontLayout = () => {
                 height="100%"
                 width="100%"
                 frameBorder={0}
+                title="Storefront Canvas"
               />
             )}
             {type === "image" && (
               <img
                 src={props.path}
-                alt="Image"
+                alt="Display"
                 style={{
                   width: "100%",
                   height: "100%",
@@ -654,137 +693,102 @@ const StorefrontLayout = () => {
             )}
 
             {type === "imagemap" && (
-              <>
+              <Box
+                sx={{
+                  position: "relative",
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  overflow: "hidden",
+                  borderRadius: border_radius || 0,
+                  border: is_border
+                    ? `${border || 1}px solid ${border_color || "#000"}`
+                    : "none",
+                  backgroundColor: is_transparent
+                    ? "transparent"
+                    : background_color,
+                }}
+              >
+                <img
+                  ref={imageRef}
+                  src={props.path}
+                  alt="ImageMap"
+                  useMap="#map-test"
+                  style={{
+                    width: imageSize.width,
+                    height: imageSize.height,
+                    display: "block",
+                  }}
+                  onLoad={() => {
+                    setImageLoaded(true);
+                    updateScaledCoords();
+                  }}
+                />
+
                 <Box
                   sx={{
-                    position: "relative",
-                    width: "100%",
-                    height: "100%",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    overflow: "hidden",
-                    borderRadius: border_radius || 0,
-                    border: is_border
-                      ? `${border || 1}px solid ${border_color || "#000"}`
-                      : "none",
-                    backgroundColor: is_transparent
-                      ? "transparent"
-                      : background_color,
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    width: `${imageSize.width}px`,
+                    height: `${imageSize.height}px`,
+                    pointerEvents: "none",
+                    zIndex: 10,
                   }}
                 >
-                  <img
-                    ref={imageRef}
-                    src={props.path}
-                    alt="ImageMap"
-                    useMap="#map-test"
-                    style={{
-                      width: imageSize.width,
-                      height: imageSize.height,
-                      display: "block",
-                    }}
-                    onLoad={() => {
-                      setImageLoaded(true);
-                      updateScaledCoords();
-                    }}
-                  />
-
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      top: "50%",
-                      left: "50%",
-                      transform: "translate(-50%, -50%)",
-                      width: `${imageSize.width}px`,
-                      height: `${imageSize.height}px`,
-                      pointerEvents: "none",
-                      zIndex: 10,
-                    }}
+                  <svg
+                    width={imageSize.width}
+                    height={imageSize.height}
+                    viewBox={`0 0 ${imageSize.width} ${imageSize.height}`}
+                    xmlns="http://www.w3.org/2000/svg"
+                    style={{ position: "absolute", top: 0, left: 0 }}
                   >
-                    <svg
-                      width={imageSize.width}
-                      height={imageSize.height}
-                      viewBox={`0 0 ${imageSize.width} ${imageSize.height}`}
-                      xmlns="http://www.w3.org/2000/svg"
-                      style={{ position: "absolute", top: 0, left: 0 }}
-                    >
-                      {convertedItemsData?.map((item) => {
-                        const coords = scaledCoordsMap[item.item_id];
-                        if (!coords) return null;
-
-                        const coordsArray = coords.split(",").map(Number);
-                        const points = [];
-                        for (let i = 0; i < coordsArray.length; i += 2) {
-                          points.push(
-                            `${coordsArray[i]},${coordsArray[i + 1]}`
-                          );
-                        }
-
-                        const isHovered = hoveredItemId === item.item_id;
-                        const isSelected = item.item_id === selectedItemId;
-
-                        return (
-                          <polygon
-                            key={item.item_id}
-                            points={points.join(" ")}
-                            onMouseEnter={() => setHoveredItemId(item.item_id)}
-                            onMouseLeave={() => setHoveredItemId(null)}
-                            style={{
-                              fill: isHovered
-                                ? hoverStyle.fill
-                                : isSelected
-                                ? selectedStyle.fill
-                                : "rgba(0,0,0,0)",
-                              fillOpacity: isHovered
-                                ? hoverStyle.fillOpacity
-                                : isSelected
-                                ? selectedStyle.fillOpacity
-                                : 0,
-                              stroke: isSelected
-                                ? selectedStyle.stroke
-                                : isHovered
-                                ? hoverStyle.stroke
-                                : "transparent",
-                              strokeWidth: isSelected
-                                ? selectedStyle.strokeWidth
-                                : isHovered
-                                ? hoverStyle.strokeWidth
-                                : 0,
-                              pointerEvents: "auto",
-                              cursor: "pointer",
-                            }}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setSelectedItemId(item.item_id);
-
-                              const payload = {
-                                session_id: sessionID,
-                                message: {
-                                  type: "change_item",
-                                  message: { item_id: item.item_id },
-                                },
-                              };
-
-                              changeViewCall(payload);
-                            }}
-                          />
-                        );
-                      })}
-                    </svg>
-                  </Box>
-
-                  <map name="map-test">
                     {convertedItemsData?.map((item) => {
                       const coords = scaledCoordsMap[item.item_id];
                       if (!coords) return null;
+
+                      const coordsArray = coords.split(",").map(Number);
+                      const points = [];
+                      for (let i = 0; i < coordsArray.length; i += 2) {
+                        points.push(`${coordsArray[i]},${coordsArray[i + 1]}`);
+                      }
+
+                      const isHovered = hoveredItemId === item.item_id;
+                      const isSelected = item.item_id === selectedItemId;
+
                       return (
-                        <area
+                        <polygon
                           key={item.item_id}
-                          shape="poly"
-                          coords={coords}
-                          href="#"
-                          alt="Test Hotspot"
-                          style={{ cursor: "pointer" }}
+                          points={points.join(" ")}
+                          onMouseEnter={() => setHoveredItemId(item.item_id)}
+                          onMouseLeave={() => setHoveredItemId(null)}
+                          style={{
+                            fill: isHovered
+                              ? hoverStyle.fill
+                              : isSelected
+                              ? selectedStyle.fill
+                              : "rgba(0,0,0,0)",
+                            fillOpacity: isHovered
+                              ? hoverStyle.fillOpacity
+                              : isSelected
+                              ? selectedStyle.fillOpacity
+                              : 0,
+                            stroke: isSelected
+                              ? selectedStyle.stroke
+                              : isHovered
+                              ? hoverStyle.stroke
+                              : "transparent",
+                            strokeWidth: isSelected
+                              ? selectedStyle.strokeWidth
+                              : isHovered
+                              ? hoverStyle.strokeWidth
+                              : 0,
+                            pointerEvents: "auto",
+                            cursor: "pointer",
+                          }}
                           onClick={(e) => {
                             e.preventDefault();
                             setSelectedItemId(item.item_id);
@@ -796,15 +800,44 @@ const StorefrontLayout = () => {
                                 message: { item_id: item.item_id },
                               },
                             };
-
                             changeViewCall(payload);
                           }}
                         />
                       );
                     })}
-                  </map>
+                  </svg>
                 </Box>
-              </>
+
+                <map name="map-test">
+                  {convertedItemsData?.map((item) => {
+                    const coords = scaledCoordsMap[item.item_id];
+                    if (!coords) return null;
+                    return (
+                      <area
+                        key={item.item_id}
+                        shape="poly"
+                        coords={coords}
+                        href="#"
+                        alt={`Hotspot for ${item.item_name || item.item_id}`}
+                        style={{ cursor: "pointer" }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setSelectedItemId(item.item_id);
+
+                          const payload = {
+                            session_id: sessionID,
+                            message: {
+                              type: "change_item",
+                              message: { item_id: item.item_id },
+                            },
+                          };
+                          changeViewCall(payload);
+                        }}
+                      />
+                    );
+                  })}
+                </map>
+              </Box>
             )}
           </>
         )}
@@ -812,7 +845,30 @@ const StorefrontLayout = () => {
     );
   };
 
-  return <Box>{pageLayout?.map(renderElement)}</Box>;
+  return (
+    <Box
+      sx={{
+        width: "100vw",
+        height: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        overflow: "hidden",
+        position: "relative",
+      }}
+    >
+      <Box
+        sx={{
+          width: calculatedPageLayoutDimensions.width,
+          height: calculatedPageLayoutDimensions.height,
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {pageLayout?.map(renderElement)}
+      </Box>
+    </Box>
+  );
 };
 
 export default StorefrontLayout;
