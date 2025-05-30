@@ -71,13 +71,14 @@ const StorefrontLayout = () => {
   const [hoveredItemId, setHoveredItemId] = useState(null);
 
   const location = useLocation();
-  const storefrontId = id;
 
   const { data: storeData } = useGetProductListData(id);
   const { mutate: changeViewCall } = useSetProductChangeCall();
   const { mutate: sendControlCall } = useSetActionCall();
 
   const storefrontData = storeData?.data;
+
+  const storefrontId = storefrontData?.storefront?.storefront_id;
   const screenOverlayDetails = storefrontData?.storefront?.screen;
   const screenTypeDetails = storefrontData?.storefront?.screen?.screen_type;
 
