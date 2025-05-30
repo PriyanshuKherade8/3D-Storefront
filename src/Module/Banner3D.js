@@ -641,7 +641,12 @@ const StorefrontLayout = () => {
             )}
 
             {type === "control" && (
-              <Box display="flex">
+              <Box
+                style={{
+                  display: "flex",
+                  flexDirection: direction || "row",
+                }}
+              >
                 {controlsData?.map((control) => {
                   const iconPath = getControlIconPath(
                     control.control_icons,
