@@ -116,7 +116,6 @@ const StorefrontLayout = () => {
       height: 0,
     });
 
-  console.log("calculatedPageLayoutDimensions", calculatedPageLayoutDimensions);
   const scalePolygonCoords = (
     originalCoords,
     naturalWidth,
@@ -281,7 +280,11 @@ const StorefrontLayout = () => {
     defaultScreenTypeId,
     fallback = null
   ) => {
-    const match = getValueByScreenType(dataArray, screenTypeId);
+    const match = getValueByScreenType(
+      dataArray,
+      screenTypeId,
+      defaultScreenTypeId
+    );
     return match?.value ?? match?.path ?? fallback;
   };
 
