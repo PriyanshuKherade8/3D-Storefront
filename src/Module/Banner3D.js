@@ -919,7 +919,10 @@ const StorefrontLayout = () => {
       sx={{
         width: "100vw",
         height: "100vh",
-        display: "flex",
+        display: {
+          xs: "block",
+          sm: "flex",
+        },
         justifyContent: "center",
         alignItems: "center",
         overflow: "hidden",
