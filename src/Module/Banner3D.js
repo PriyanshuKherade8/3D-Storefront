@@ -81,6 +81,8 @@ const StorefrontLayout = () => {
   const storefrontId = storefrontData?.storefront?.storefront_id;
   const screenOverlayDetails = storefrontData?.storefront?.screen;
   const screenTypeDetails = storefrontData?.storefront?.screen?.screen_type;
+  const defaultScreenType = screenTypeDetails?.find((type) => type.is_default);
+  const defaultScreenTypeId = defaultScreenType?.screen_type_id || null;
 
   const sessionID = storefrontData?.sessionID;
   const itemsData = storefrontData?.storefront?.items;
@@ -167,7 +169,14 @@ const StorefrontLayout = () => {
 
     const newCoordsMap = {};
     itemsData?.forEach((item) => {
-      const mapEntry = item.map.find((m) => m.screen_type_id === screenType);
+      let mapEntry = item.map.find((m) => m.screen_type_id === screenType);
+
+      if (!mapEntry && defaultScreenTypeId) {
+        mapEntry = item.map.find(
+          (m) => m.screen_type_id === defaultScreenTypeId
+        );
+      }
+
       if (!mapEntry || !Array.isArray(mapEntry.values)) return;
 
       const scaled = scalePolygonCoords(
@@ -385,9 +394,6 @@ const StorefrontLayout = () => {
 
     return layout;
   };
-
-  const defaultScreenType = screenTypeDetails?.find((type) => type.is_default);
-  const defaultScreenTypeId = defaultScreenType?.screen_type_id || null;
 
   const generatePageLayout = (
     storefrontData,
