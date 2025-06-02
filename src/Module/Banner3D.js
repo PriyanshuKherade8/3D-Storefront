@@ -75,12 +75,20 @@ const StorefrontLayout = () => {
 
   const location = useLocation();
   const [isSocketConnected, setIsSocketConnected] = useState(false);
+
+  const [isIframeDocumentLoaded, setIsIframeDocumentLoaded] = useState(false);
   const URL = "http://143.110.186.134";
   const socket = io(URL, { autoConnect: false });
 
   const { currProductKey, isLoadingScreen } = useSocket(socket);
 
-  console.log("canvasLoading", isLoadingScreen);
+  const iframeRef = useRef(null);
+
+  const isLoadingCanvas = !isIframeDocumentLoaded || isLoadingScreen;
+
+  const handleIframeLoad = () => {
+    setIsIframeDocumentLoaded(true);
+  };
 
   const { data: storeData } = useGetProductListData(id);
   const { mutate: changeViewCall } = useSetProductChangeCall();
@@ -695,15 +703,43 @@ const StorefrontLayout = () => {
             )}
 
             {type === "canvas" && (
-              <iframe
-                id={`canvas-iframe`}
-                src={iframeUrl}
-                scrolling="no"
-                height="100%"
-                width="100%"
-                frameBorder={0}
-                title="Storefront Canvas"
-              />
+              <>
+                <iframe
+                  ref={iframeRef}
+                  id={`canvas-iframe`}
+                  src={iframeUrl}
+                  onLoad={handleIframeLoad}
+                  scrolling="no"
+                  height="100%"
+                  width="100%"
+                  frameBorder={0}
+                  title="Storefront Canvas"
+                  className="rounded-lg shadow-lg"
+                  style={{ display: !isLoadingCanvas ? "none" : "block" }}
+                />
+
+                {!isLoadingCanvas && (
+                  <Box
+                    style={{
+                      width: size.width,
+                      height: size.height,
+                    }}
+                  >
+                    <Loading
+                      text="Loading..."
+                      waveSpeed={0.2}
+                      waveHeight={1}
+                      fontSize={32}
+                      color="#192b61"
+                      enableFlicker={true}
+                      flickerIntensity={3}
+                      flickerSpeed={3}
+                      isTransparent={false}
+                      backgroundColor={"#FF5733"}
+                    />
+                  </Box>
+                )}
+              </>
             )}
             {type === "image" && (
               <img
