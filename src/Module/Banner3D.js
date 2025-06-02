@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Box, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import {
@@ -7,6 +7,9 @@ import {
   useSetProductChangeCall,
 } from "../services";
 import { useLocation, useParams } from "react-router-dom";
+import useSocket from "../hooks/useSocketMessage";
+import io from "socket.io-client";
+import Loading from "../components/Loading";
 
 const getScreenTypeValue = (screenWidth, screenHeight, screenTypeDetails) => {
   if (
@@ -71,6 +74,13 @@ const StorefrontLayout = () => {
   const [hoveredItemId, setHoveredItemId] = useState(null);
 
   const location = useLocation();
+  const [isSocketConnected, setIsSocketConnected] = useState(false);
+  const URL = "http://143.110.186.134";
+  const socket = io(URL, { autoConnect: false });
+
+  const { currProductKey, isLoadingScreen } = useSocket(socket);
+
+  console.log("canvasLoading", isLoadingScreen);
 
   const { data: storeData } = useGetProductListData(id);
   const { mutate: changeViewCall } = useSetProductChangeCall();
@@ -87,6 +97,14 @@ const StorefrontLayout = () => {
   const sessionID = storefrontData?.sessionID;
   const itemsData = storefrontData?.storefront?.items;
   const controlsData = storefrontData?.storefront?.controls;
+
+  useEffect(() => {
+    if (!isSocketConnected && sessionID) {
+      socket.auth = { sessionId: sessionID };
+      socket.connect();
+      setIsSocketConnected(true);
+    }
+  }, [sessionID]);
 
   useEffect(() => {
     const defaultItem = itemsData?.find((item) => item?.is_default);
