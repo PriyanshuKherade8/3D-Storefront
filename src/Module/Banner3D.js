@@ -727,15 +727,15 @@ const StorefrontLayout = () => {
                   >
                     <Loading
                       text="Loading..."
-                      waveSpeed={0.2}
+                      waveSpeed={0.4}
                       waveHeight={1}
                       fontSize={32}
                       color="#192b61"
                       enableFlicker={true}
                       flickerIntensity={3}
                       flickerSpeed={3}
-                      isTransparent={false}
-                      backgroundColor={"#FF5733"}
+                      isTransparent={true}
+                      backgroundColor={"#D3D3D3"}
                     />
                   </Box>
                 )}
