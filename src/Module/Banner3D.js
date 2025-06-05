@@ -77,7 +77,7 @@ const StorefrontLayout = () => {
   const [isSocketConnected, setIsSocketConnected] = useState(false);
 
   const [isIframeDocumentLoaded, setIsIframeDocumentLoaded] = useState(false);
-  const URL = "http://143.110.186.134";
+  const URL = process.env.REACT_APP_SOCKET_URL;
   const socket = io(URL, { autoConnect: false });
 
   const { currProductKey, isLoadingScreen } = useSocket(socket);
@@ -558,9 +558,10 @@ const StorefrontLayout = () => {
 
   const iframeUrl =
     sessionID && storefrontId
-      ? `http://storefront.xculptor.io/?storefront=${storefrontId}&product=01&session=${sessionID}`
+      ? `${process.env.REACT_APP_CANVAS_URL}/?storefront=${storefrontId}&session=${sessionID}&page_height=100&page_width=100`
       : "";
 
+  console.log("iframeUrl", iframeUrl);
   const renderElement = (element) => {
     const {
       element_id,
