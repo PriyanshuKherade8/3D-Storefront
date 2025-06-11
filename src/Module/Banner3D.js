@@ -84,7 +84,7 @@ const StorefrontLayout = () => {
 
   const iframeRef = useRef(null);
 
-  const isLoadingCanvas = !isIframeDocumentLoaded || isLoadingScreen;
+  const isLoadingCanvas = isLoadingScreen;
 
   const handleIframeLoad = () => {
     setIsIframeDocumentLoaded(true);
@@ -704,26 +704,44 @@ const StorefrontLayout = () => {
             )}
 
             {type === "canvas" && (
-              <>
+              <Box
+                sx={{
+                  position: "relative",
+                  width: "100%",
+                  height: "100%",
+                }}
+              >
                 <iframe
-                  ref={iframeRef}
-                  id={`canvas-iframe`}
+                  id="canvas-iframe"
                   src={iframeUrl}
-                  onLoad={handleIframeLoad}
                   scrolling="no"
                   height="100%"
                   width="100%"
                   frameBorder={0}
                   title="Storefront Canvas"
-                  className="rounded-lg shadow-lg"
-                  style={{ display: !isLoadingCanvas ? "none" : "block" }}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    visibility: isLoadingCanvas ? "visible" : "hidden",
+                    zIndex: 1,
+                  }}
                 />
 
                 {!isLoadingCanvas && (
                   <Box
-                    style={{
-                      width: size.width,
-                      height: size.height,
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "100%",
+                      zIndex: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}
                   >
                     <Loading
@@ -740,8 +758,9 @@ const StorefrontLayout = () => {
                     />
                   </Box>
                 )}
-              </>
+              </Box>
             )}
+
             {type === "image" && (
               <img
                 src={props.path}
