@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, Tab, Tabs, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import {
   useGetProductListData,
@@ -68,6 +68,7 @@ const StorefrontLayout = () => {
   const [scaledCoordsMap, setScaledCoordsMap] = useState({});
   const [imageLoaded, setImageLoaded] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState(null);
+  console.log("selectedItemId", selectedItemId);
 
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
 
@@ -93,6 +94,7 @@ const StorefrontLayout = () => {
   const { data: storeData } = useGetProductListData(id);
   const { mutate: changeViewCall } = useSetProductChangeCall();
   const { mutate: sendControlCall } = useSetActionCall();
+  const { mutate: variantChange } = useSetProductChangeCall();
 
   const storefrontData = storeData?.data;
 
@@ -101,10 +103,31 @@ const StorefrontLayout = () => {
   const screenTypeDetails = storefrontData?.storefront?.screen?.screen_type;
   const defaultScreenType = screenTypeDetails?.find((type) => type.is_default);
   const defaultScreenTypeId = defaultScreenType?.screen_type_id || null;
-
+  const productData = storefrontData?.storefront?.products;
+  console.log("get", productData);
   const sessionID = storefrontData?.sessionID;
   const itemsData = storefrontData?.storefront?.items;
   const controlsData = storefrontData?.storefront?.controls;
+
+  const [selectedTabs, setSelectedTabs] = useState({});
+
+  const handleVariantChange = useCallback(
+    (productId, propertyId, variantId) => {
+      const payload = {
+        session_id: sessionID,
+        message: {
+          type: "change_variant",
+          message: {
+            product_id: productId,
+            property_id: propertyId,
+            variant_id: variantId,
+          },
+        },
+      };
+      variantChange(payload);
+    },
+    [sessionID, variantChange]
+  );
 
   useEffect(() => {
     if (!isSocketConnected && sessionID) {
@@ -758,6 +781,142 @@ const StorefrontLayout = () => {
                     />
                   </Box>
                 )}
+              </Box>
+            )}
+
+            {type === "config" && selectedItemId && (
+              <Box sx={{ width: "100%" }}>
+                {productData
+                  .filter((product) => product.product_key === selectedItemId)
+                  .map((product) => {
+                    const { product_key, product_name, property } = product;
+                    const localSelectedTab = selectedTabs[product_key] || 0;
+
+                    return (
+                      <Box key={product_key} sx={{ mb: 0 }}>
+                        <Typography
+                          variant="h6"
+                          sx={{ fontWeight: 600, color: "#192b61" }}
+                        >
+                          {product_name}
+                        </Typography>
+
+                        <Tabs
+                          value={localSelectedTab}
+                          onChange={(e, newValue) =>
+                            setSelectedTabs((prev) => ({
+                              ...prev,
+                              [product_key]: newValue,
+                            }))
+                          }
+                          variant="scrollable"
+                          scrollButtons="auto"
+                          aria-label={`config-tabs-${product_key}`}
+                          sx={{
+                            mb: 2,
+                            borderBottom: "1px solid #e0e0e0",
+                            "& .MuiTab-root": {
+                              textTransform: "none",
+                              fontWeight: 500,
+                              fontSize: "14px",
+                              color: "#555",
+                            },
+                            "& .Mui-selected": {
+                              color: "#192b61",
+                              fontWeight: 600,
+                            },
+                          }}
+                        >
+                          {property.map((prop) => (
+                            <Tab
+                              key={prop.property_id}
+                              label={prop.display_name}
+                            />
+                          ))}
+                        </Tabs>
+
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: 2,
+                            justifyContent: "flex-start",
+                          }}
+                        >
+                          {property[localSelectedTab]?.variants.map(
+                            (variant) => {
+                              const icon = variant.variant_icons?.find(
+                                (icon) => icon.file_type === "L"
+                              )?.path;
+
+                              return (
+                                <Box
+                                  key={variant.variant_id}
+                                  sx={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    width: 100,
+                                    // p: 1,
+                                    borderRadius: 2,
+                                    // boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                                    transition: "transform 0.2s ease-in-out",
+                                    cursor: "pointer",
+                                    // "&:hover": {
+                                    //   transform: "scale(1.05)",
+                                    //   boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+                                    // },
+                                  }}
+                                  title={variant.display_name}
+                                  onClick={() =>
+                                    handleVariantChange(
+                                      product.product_id,
+                                      property[localSelectedTab].property_id,
+                                      variant.variant_id
+                                    )
+                                  }
+                                >
+                                  <Box
+                                    sx={{
+                                      width: 40,
+                                      height: 40,
+                                      borderRadius: "50%",
+                                      overflow: "hidden",
+                                      border: "2px solid #ccc",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      backgroundColor: "#fff",
+                                      mb: 1,
+                                    }}
+                                  >
+                                    <img
+                                      src={icon}
+                                      alt={variant.display_name}
+                                      style={{
+                                        width: "100%",
+                                        height: "100%",
+                                        objectFit: "cover",
+                                      }}
+                                    />
+                                  </Box>
+                                  <Typography
+                                    variant="caption"
+                                    sx={{
+                                      textAlign: "center",
+                                      fontSize: "12px",
+                                    }}
+                                  >
+                                    {variant.display_name}
+                                  </Typography>
+                                </Box>
+                              );
+                            }
+                          )}
+                        </Box>
+                      </Box>
+                    );
+                  })}
               </Box>
             )}
 
