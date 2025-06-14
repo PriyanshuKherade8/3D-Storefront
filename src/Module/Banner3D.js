@@ -110,6 +110,7 @@ const StorefrontLayout = () => {
   const controlsData = storefrontData?.storefront?.controls;
 
   const [selectedTabs, setSelectedTabs] = useState({});
+  const [selectedVariants, setSelectedVariants] = useState({});
 
   const handleVariantChange = useCallback(
     (productId, propertyId, variantId) => {
@@ -124,6 +125,15 @@ const StorefrontLayout = () => {
           },
         },
       };
+
+      setSelectedVariants((prev) => ({
+        ...prev,
+        [productId]: {
+          ...(prev[productId] || {}),
+          [propertyId]: variantId,
+        },
+      }));
+
       variantChange(payload);
     },
     [sessionID, variantChange]
@@ -795,7 +805,7 @@ const StorefrontLayout = () => {
                     return (
                       <Box key={product_key} sx={{ mb: 0 }}>
                         <Typography
-                          variant="h6"
+                          variant="subtitle"
                           sx={{ fontWeight: 600, color: "#192b61" }}
                         >
                           {product_name}
@@ -813,7 +823,6 @@ const StorefrontLayout = () => {
                           scrollButtons="auto"
                           aria-label={`config-tabs-${product_key}`}
                           sx={{
-                            mb: 2,
                             borderBottom: "1px solid #e0e0e0",
                             "& .MuiTab-root": {
                               textTransform: "none",
@@ -838,9 +847,9 @@ const StorefrontLayout = () => {
                         <Box
                           sx={{
                             display: "flex",
-                            flexWrap: "wrap",
+                            overflowX: "auto",
                             gap: 2,
-                            justifyContent: "flex-start",
+                            py: 1,
                           }}
                         >
                           {property[localSelectedTab]?.variants.map(
@@ -849,6 +858,11 @@ const StorefrontLayout = () => {
                                 (icon) => icon.file_type === "L"
                               )?.path;
 
+                              const isSelected =
+                                selectedVariants[product.product_id]?.[
+                                  property[localSelectedTab].property_id
+                                ] === variant.variant_id;
+
                               return (
                                 <Box
                                   key={variant.variant_id}
@@ -856,16 +870,11 @@ const StorefrontLayout = () => {
                                     display: "flex",
                                     flexDirection: "column",
                                     alignItems: "center",
-                                    width: 100,
-                                    // p: 1,
+                                    width: 80,
+                                    minWidth: 80,
                                     borderRadius: 2,
-                                    // boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-                                    transition: "transform 0.2s ease-in-out",
                                     cursor: "pointer",
-                                    // "&:hover": {
-                                    //   transform: "scale(1.05)",
-                                    //   boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
-                                    // },
+                                    transition: "all 0.2s ease-in-out",
                                   }}
                                   title={variant.display_name}
                                   onClick={() =>
@@ -887,16 +896,24 @@ const StorefrontLayout = () => {
                                       alignItems: "center",
                                       justifyContent: "center",
                                       backgroundColor: "#fff",
+                                      // padding: "5px",
                                       mb: 1,
+                                      border: isSelected
+                                        ? "2px solid #192b61"
+                                        : "2px solid transparent",
+                                      backgroundColor: isSelected
+                                        ? "#f0f4ff"
+                                        : "transparent",
                                     }}
                                   >
                                     <img
                                       src={icon}
                                       alt={variant.display_name}
                                       style={{
-                                        width: "100%",
-                                        height: "100%",
+                                        width: "80%",
+                                        height: "80%",
                                         objectFit: "cover",
+                                        borderRadius: "50%",
                                       }}
                                     />
                                   </Box>
@@ -905,6 +922,7 @@ const StorefrontLayout = () => {
                                     sx={{
                                       textAlign: "center",
                                       fontSize: "12px",
+                                      whiteSpace: "nowrap",
                                     }}
                                   >
                                     {variant.display_name}
