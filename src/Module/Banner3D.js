@@ -795,7 +795,7 @@ const StorefrontLayout = () => {
             )}
 
             {type === "config" && selectedItemId && (
-              <Box sx={{ width: "100%" }}>
+              <Box sx={{ width: "100%", height: "100%" }}>
                 {productData
                   .filter((product) => product.product_key === selectedItemId)
                   .map((product) => {
@@ -847,9 +847,9 @@ const StorefrontLayout = () => {
                         <Box
                           sx={{
                             display: "flex",
-                            overflowX: "auto",
+                            flexWrap: "wrap",
+                            justifyContent: "flex-start",
                             gap: 2,
-                            py: 1,
                           }}
                         >
                           {property[localSelectedTab]?.variants.map(
@@ -870,11 +870,17 @@ const StorefrontLayout = () => {
                                     display: "flex",
                                     flexDirection: "column",
                                     alignItems: "center",
-                                    width: 80,
-                                    minWidth: 80,
-                                    borderRadius: 2,
+                                    width: {
+                                      xs: "22vw",
+                                      sm: "16vw",
+                                      md: "12vw",
+                                      lg: 80,
+                                    },
+                                    minWidth: 60,
+                                    maxWidth: 100,
                                     cursor: "pointer",
                                     transition: "all 0.2s ease-in-out",
+                                    borderRadius: 2,
                                   }}
                                   title={variant.display_name}
                                   onClick={() =>
@@ -889,21 +895,18 @@ const StorefrontLayout = () => {
                                     sx={{
                                       width: 40,
                                       height: 40,
+                                      aspectRatio: "1 / 1",
                                       borderRadius: "50%",
                                       overflow: "hidden",
-                                      border: "2px solid #ccc",
+                                      border: isSelected
+                                        ? "2px solid #192b61"
+                                        : "2px solid #ccc",
+                                      backgroundColor: isSelected
+                                        ? "#f0f4ff"
+                                        : "#fff",
                                       display: "flex",
                                       alignItems: "center",
                                       justifyContent: "center",
-                                      backgroundColor: "#fff",
-                                      // padding: "5px",
-                                      mb: 1,
-                                      border: isSelected
-                                        ? "2px solid #192b61"
-                                        : "2px solid transparent",
-                                      backgroundColor: isSelected
-                                        ? "#f0f4ff"
-                                        : "transparent",
                                     }}
                                   >
                                     <img
@@ -920,9 +923,12 @@ const StorefrontLayout = () => {
                                   <Typography
                                     variant="caption"
                                     sx={{
-                                      textAlign: "center",
                                       fontSize: "12px",
+                                      textAlign: "center",
                                       whiteSpace: "nowrap",
+                                      width: "100%",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
                                     }}
                                   >
                                     {variant.display_name}
@@ -1120,8 +1126,12 @@ const StorefrontLayout = () => {
           xs: "block",
           sm: "flex",
         },
-        justifyContent: "center",
-        alignItems: "center",
+        justifyContent: {
+          sm: "center",
+        },
+        alignItems: {
+          sm: "center",
+        },
         overflow: "hidden",
         position: "relative",
       }}
@@ -1132,6 +1142,10 @@ const StorefrontLayout = () => {
           height: calculatedPageLayoutDimensions.height,
           position: "relative",
           overflow: "hidden",
+          margin: {
+            xs: "0 auto",
+            sm: 0,
+          },
         }}
       >
         {pageLayout?.map(renderElement)}
