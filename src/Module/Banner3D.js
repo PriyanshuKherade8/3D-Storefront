@@ -637,6 +637,10 @@ const StorefrontLayout = () => {
       text_align,
     } = props;
 
+    const isVisible = element?.props?.is_visible !== false;
+
+    if (!isVisible) return null;
+
     const isTopLevel = position && typeof position === "object";
 
     const containerStyles = {
