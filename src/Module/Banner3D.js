@@ -715,6 +715,8 @@ const StorefrontLayout = () => {
                 style={{
                   display: "flex",
                   flexDirection: direction || "row",
+                  width: "100%",
+                  height: "100%",
                 }}
               >
                 {controlsData?.map((control) => {
@@ -730,7 +732,7 @@ const StorefrontLayout = () => {
                       alt={control.control_name}
                       title={control.control_name}
                       style={{
-                        margin: "3px",
+                        padding: "4px 0px",
                         cursor: "pointer",
                       }}
                       onClick={() => handleControlClick(control)}
