@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Box, Tab, Tabs, Typography } from "@mui/material";
+import {
+  Box,
+  IconButton,
+  Paper,
+  Tab,
+  Tabs,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import {
   useGetProductListData,
@@ -93,7 +101,8 @@ const StorefrontLayout = () => {
 
   const { data: storeData } = useGetProductListData(id);
   const { mutate: changeViewCall } = useSetProductChangeCall();
-  const { mutate: sendControlCall } = useSetActionCall();
+
+  const { mutate: sendRotateCall } = useSetActionCall();
   const { mutate: variantChange } = useSetProductChangeCall();
 
   const storefrontData = storeData?.data;
@@ -139,6 +148,32 @@ const StorefrontLayout = () => {
     [sessionID, variantChange]
   );
 
+  const handleToggle = (control) => {
+    const isBoolean = control.control_data_type === "boolean";
+    const currentValue = controlStates?.[control.control_id] ?? false;
+    const newValue = isBoolean ? !currentValue : true;
+
+    const payload = {
+      session_id: sessionID,
+      message: {
+        type: "control",
+        message: {
+          control_id: control.control_id,
+          value: newValue,
+        },
+      },
+    };
+
+    sendRotateCall(payload);
+
+    if (isBoolean) {
+      setControlStates((prev) => ({
+        ...prev,
+        [control.control_id]: newValue,
+      }));
+    }
+  };
+
   useEffect(() => {
     if (!isSocketConnected && sessionID) {
       socket.auth = { sessionId: sessionID };
@@ -153,6 +188,18 @@ const StorefrontLayout = () => {
       setSelectedItemId(defaultItem?.item_id);
     }
   }, [itemsData]);
+
+  useEffect(() => {
+    if (controlsData?.length) {
+      const initialStates = {};
+      controlsData.forEach((control) => {
+        if (control.control_data_type === "boolean") {
+          initialStates[control.control_id] = control.default_value === true;
+        }
+      });
+      setControlStates(initialStates);
+    }
+  }, [controlsData]);
 
   const convertedItemsData = itemsData?.map((item) => {
     const convertedMaps = item?.map.map((screen) => {
@@ -540,26 +587,6 @@ const StorefrontLayout = () => {
     }, {})
   );
 
-  const handleControlClick = (control) => {
-    setControlStates((prevStates) => {
-      const newValue = !prevStates?.[control?.control_id];
-
-      const payload = {
-        session_id: sessionID,
-        message: {
-          type: "control",
-          message: {
-            control_id: control.control_id,
-            value: newValue,
-          },
-        },
-      };
-
-      sendControlCall(payload);
-      return { ...prevStates, [control.control_id]: newValue };
-    });
-  };
-
   const getSvgStyle = (state, overlayDetails) => {
     const config =
       state === "hover"
@@ -635,6 +662,10 @@ const StorefrontLayout = () => {
       padding_left,
       padding_right,
       text_align,
+      selected_color,
+      selected_background_color,
+      is_selected_color,
+      is_selected_background_color,
     } = props;
 
     const isVisible = element?.props?.is_visible !== false;
@@ -712,11 +743,15 @@ const StorefrontLayout = () => {
 
             {type === "control" && (
               <Box
-                style={{
+                sx={{
                   display: "flex",
                   flexDirection: direction || "row",
                   width: "100%",
                   height: "100%",
+                  gap: "6px",
+                  backgroundColor: is_selected_background_color
+                    ? selected_background_color
+                    : "#EEEDEB",
                 }}
               >
                 {controlsData?.map((control) => {
@@ -724,19 +759,30 @@ const StorefrontLayout = () => {
                     control.control_icons,
                     fileType
                   );
+                  const isBoolean = control.control_data_type === "boolean";
+                  const isSelected =
+                    isBoolean && controlStates?.[control.control_id];
+
+                  const selectedColor = is_selected_color
+                    ? selected_color
+                    : "white";
 
                   return (
-                    <img
+                    <Box
                       key={control.control_id}
-                      src={iconPath}
-                      alt={control.control_name}
-                      title={control.control_name}
-                      style={{
-                        padding: "4px 0px",
-                        cursor: "pointer",
+                      sx={{
+                        backgroundColor: isSelected
+                          ? selectedColor
+                          : "transparent",
+                        borderRadius: "10px",
                       }}
-                      onClick={() => handleControlClick(control)}
-                    />
+                    >
+                      <Tooltip title={control.control_name}>
+                        <IconButton onClick={() => handleToggle(control)}>
+                          <img src={iconPath} alt={control.control_name} />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
                   );
                 })}
               </Box>
