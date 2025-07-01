@@ -749,9 +749,6 @@ const StorefrontLayout = () => {
                   width: "100%",
                   height: "100%",
                   gap: "6px",
-                  backgroundColor: is_selected_background_color
-                    ? selected_background_color
-                    : "#EEEDEB",
                 }}
               >
                 {controlsData?.map((control) => {
@@ -763,8 +760,8 @@ const StorefrontLayout = () => {
                   const isSelected =
                     isBoolean && controlStates?.[control.control_id];
 
-                  const selectedColor = is_selected_color
-                    ? selected_color
+                  const selectedBackgroundColor = is_selected_background_color
+                    ? selected_background_color
                     : "white";
 
                   return (
@@ -772,7 +769,7 @@ const StorefrontLayout = () => {
                       key={control.control_id}
                       sx={{
                         backgroundColor: isSelected
-                          ? selectedColor
+                          ? selectedBackgroundColor
                           : "transparent",
                         borderRadius: "10px",
                       }}
