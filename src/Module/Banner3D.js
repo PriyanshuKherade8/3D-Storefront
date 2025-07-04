@@ -666,6 +666,8 @@ const StorefrontLayout = () => {
       selected_background_color,
       is_selected_color,
       is_selected_background_color,
+      is_shadow,
+      box_shadow,
     } = props;
 
     const isVisible = element?.props?.is_visible !== false;
@@ -681,6 +683,9 @@ const StorefrontLayout = () => {
       backgroundColor: is_transparent
         ? "transparent"
         : background_color || "transparent",
+      background: is_transparent
+        ? "transparent"
+        : background_color || "transparent",
       border: is_border
         ? `${border || 1}px solid ${border_color || "#000"}`
         : "none",
@@ -694,6 +699,7 @@ const StorefrontLayout = () => {
       paddingLeft: padding_left,
       paddingRight: padding_right,
       boxSizing: "border-box",
+      boxShadow: is_shadow ? box_shadow : "none",
       textAlign: text_align,
       position: isTopLevel ? "absolute" : "relative",
       ...(isTopLevel && {
