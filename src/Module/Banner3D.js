@@ -861,118 +861,159 @@ const StorefrontLayout = () => {
             )}
 
             {type === "config" && selectedItemId && (
-              <Box sx={{ width: "100%", height: "100%" }}>
-                {productData
-                  .filter((product) => product.product_key === selectedItemId)
-                  .map((product) => {
-                    const { product_key, product_name, property } = product;
-                    const localSelectedTab = selectedTabs[product_key] || 0;
+              <Box style={{ height: "100%", width: "100%" }}>
+                {productData?.map((product) => {
+                  const { product_key, product_name, property } = product;
 
-                    return (
-                      <Box key={product_key} sx={{ mb: 0 }}>
-                        <Typography
-                          variant="subtitle"
-                          sx={{ fontWeight: 600, color: "#192b61" }}
-                        >
-                          {product_name}
-                        </Typography>
+                  const localSelectedTab = selectedTabs[product_key] || 0;
 
-                        <Tabs
-                          value={localSelectedTab}
-                          onChange={(e, newValue) =>
-                            setSelectedTabs((prev) => ({
-                              ...prev,
-                              [product_key]: newValue,
-                            }))
-                          }
-                          variant="scrollable"
-                          scrollButtons="auto"
-                          aria-label={`config-tabs-${product_key}`}
-                          sx={{
-                            borderBottom: "1px solid #e0e0e0",
-                            "& .MuiTab-root": {
-                              textTransform: "none",
-                              fontWeight: 500,
-                              fontSize: "14px",
-                              color: "#555",
-                            },
-                            "& .Mui-selected": {
-                              color: "#192b61",
-                              fontWeight: 600,
-                            },
-                          }}
-                        >
-                          {property.map((prop) => (
-                            <Tab
-                              key={prop.property_id}
-                              label={prop.display_name}
-                            />
-                          ))}
-                        </Tabs>
+                  return (
+                    <Box key={product_key}>
+                      {product_name && (
+                        <Box style={{ marginBottom: "10px" }}>
+                          <Typography
+                            variant="subtitle"
+                            sx={{ fontWeight: 600, color: "#192b61" }}
+                          >
+                            {product_name}
+                          </Typography>
+                        </Box>
+                      )}
 
+                      <Tabs
+                        value={localSelectedTab}
+                        onChange={(e, newValue) =>
+                          setSelectedTabs((prev) => ({
+                            ...prev,
+                            [product_key]: newValue,
+                          }))
+                        }
+                        variant="scrollable"
+                        scrollButtons="auto"
+                        aria-label={`config-tabs-${product_key}`}
+                        sx={{
+                          minHeight: "auto",
+                          padding: "0px",
+                          borderBottom: "1px solid #e0e0e0",
+                          "& .MuiTabs-flexContainer": {
+                            gap: 1,
+                          },
+                          "& .MuiTab-root": {
+                            textTransform: "none",
+                            fontWeight: 500,
+                            fontSize: "14px",
+                            color: "#192b61",
+                            fontFamily: "inherit",
+                            minHeight: "auto",
+                            padding: "0px",
+                          },
+                          "& .MuiTab-root.Mui-selected": {
+                            color: "#192b61",
+                            fontWeight: 600,
+                            marginBottom: "5px",
+                          },
+                          "& .MuiTabs-indicator": {
+                            backgroundColor: "#192b61",
+                          },
+                        }}
+                      >
+                        {property.map((prop) => (
+                          <Tab
+                            key={prop.property_id}
+                            label={prop.display_name}
+                            disableRipple
+                          />
+                        ))}
+                      </Tabs>
+
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          width: "240px",
+                          overflow: "hidden",
+                        }}
+                      >
                         <Box
+                          id={`variant-scroll-${product_key}`}
                           sx={{
                             display: "flex",
-                            flexWrap: "wrap",
-                            justifyContent: "flex-start",
-                            gap: 2,
+                            gap: 0.5,
+                            // py: 0.5,
+                            overflowX: "auto",
+                            overflowY: "hidden",
+                            width: "100%",
+                            justifyContent: "space-between",
+                            scrollBehavior: "smooth",
+                            WebkitOverflowScrolling: "touch",
+                            scrollbarWidth: "thin",
+                            "&::-webkit-scrollbar": {
+                              height: "4px",
+                            },
+                            "&::-webkit-scrollbar-track": {
+                              backgroundColor: "transparent",
+                            },
+                            "&::-webkit-scrollbar-thumb": {
+                              backgroundColor: "#aaa",
+                              borderRadius: "4px",
+                            },
                           }}
                         >
                           {property[localSelectedTab]?.variants.map(
                             (variant) => {
+                              const productKey = product.product_key;
+                              const propertyId =
+                                property[localSelectedTab].property_id;
+                              const variantId =
+                                variant.variant_id ?? variant.varinat_id;
+
+                              const isSelected =
+                                selectedVariants?.[productKey]?.[propertyId] ===
+                                variantId;
+
                               const icon = variant.variant_icons?.find(
                                 (icon) => icon.file_type === "L"
                               )?.path;
 
-                              const isSelected =
-                                selectedVariants[product.product_id]?.[
-                                  property[localSelectedTab].property_id
-                                ] === variant.variant_id;
-
                               return (
                                 <Box
-                                  key={variant.variant_id}
+                                  key={variantId}
                                   sx={{
                                     display: "flex",
                                     flexDirection: "column",
                                     alignItems: "center",
-                                    width: {
-                                      xs: "22vw",
-                                      sm: "16vw",
-                                      md: "12vw",
-                                      lg: 80,
-                                    },
-                                    minWidth: 60,
-                                    maxWidth: 100,
+                                    width: 65,
+                                    minWidth: 65,
+                                    borderRadius: 2,
                                     cursor: "pointer",
                                     transition: "all 0.2s ease-in-out",
-                                    borderRadius: 2,
+                                    flexShrink: 0,
+                                    paddingTop: "2px",
                                   }}
                                   title={variant.display_name}
-                                  onClick={() =>
+                                  onClick={() => {
                                     handleVariantChange(
-                                      product.product_id,
-                                      property[localSelectedTab].property_id,
-                                      variant.variant_id
-                                    )
-                                  }
+                                      productKey,
+                                      propertyId,
+                                      variantId
+                                    );
+                                  }}
                                 >
                                   <Box
                                     sx={{
-                                      width: 40,
-                                      height: 40,
-                                      aspectRatio: "1 / 1",
+                                      width: 34,
+                                      height: 34,
                                       borderRadius: "50%",
                                       overflow: "hidden",
                                       border: isSelected
                                         ? "2px solid #192b61"
-                                        : "2px solid #ccc",
-                                      backgroundColor: isSelected
-                                        ? "#f0f4ff"
-                                        : "#fff",
+                                        : "2px solid transparent",
                                       display: "flex",
                                       alignItems: "center",
                                       justifyContent: "center",
+                                      backgroundColor: isSelected
+                                        ? "#f0f4ff"
+                                        : "transparent",
                                     }}
                                   >
                                     <img
@@ -989,12 +1030,9 @@ const StorefrontLayout = () => {
                                   <Typography
                                     variant="caption"
                                     sx={{
-                                      fontSize: "12px",
                                       textAlign: "center",
+                                      fontSize: "12px",
                                       whiteSpace: "nowrap",
-                                      width: "100%",
-                                      overflow: "hidden",
-                                      textOverflow: "ellipsis",
                                     }}
                                   >
                                     {variant.display_name}
@@ -1005,8 +1043,9 @@ const StorefrontLayout = () => {
                           )}
                         </Box>
                       </Box>
-                    );
-                  })}
+                    </Box>
+                  );
+                })}
               </Box>
             )}
 
