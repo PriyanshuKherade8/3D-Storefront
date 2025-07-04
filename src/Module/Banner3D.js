@@ -702,6 +702,17 @@ const StorefrontLayout = () => {
       }),
     };
 
+    const handleClick = () => {
+      let path = element?.props?.on_click;
+
+      if (path) {
+        if (!/^https?:\/\//i.test(path)) {
+          path = `https://${path}`;
+        }
+        window.open(path, "_blank");
+      }
+    };
+
     return (
       <Grid
         key={element_id}
@@ -1158,6 +1169,38 @@ const StorefrontLayout = () => {
                     );
                   })}
                 </map>
+              </Box>
+            )}
+
+            {type === "button" && (
+              <Box
+                onClick={handleClick}
+                style={{
+                  backgroundColor: props?.background_color,
+                  borderRadius: props?.border_radius,
+                  border: props?.is_border
+                    ? `${props?.border}px solid ${props?.border_color}`
+                    : "none",
+                  color: props?.font_color,
+                  fontFamily: props?.font_family,
+                  fontSize: props?.font_size,
+                  fontStyle: props?.font_style,
+                  fontWeight: props?.font_weight,
+                  letterSpacing: props?.letter_spacing,
+                  lineHeight: props?.line_height,
+                  marginTop: `${props?.margin_top}px`,
+                  marginBottom: `${props?.margin_bottom}px`,
+                  marginLeft: `${props?.margin_left}px`,
+                  marginRight: `${props?.margin_right}px`,
+                  paddingTop: `${props?.padding_top}px`,
+                  paddingBottom: `${props?.padding_bottom}px`,
+                  paddingLeft: `${props?.padding_left}px`,
+                  paddingRight: `${props?.padding_right}px`,
+                  textAlign: props?.text_align,
+                  cursor: props?.on_click ? "pointer" : "default",
+                }}
+              >
+                {props?.text}
               </Box>
             )}
           </>
