@@ -722,7 +722,7 @@ const StorefrontLayout = () => {
       border: is_border
         ? `${border || 1}px solid ${border_color || "#000"}`
         : "none",
-      backdropFilter: is_blur ? `blur${blur}px` : "blur()",
+      backdropFilter: is_blur ? `blur${blur}px` : "blur(0)px",
       borderRadius: border_radius || 0,
       marginTop: margin_top,
       marginBottom: margin_bottom,
