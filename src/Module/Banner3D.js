@@ -201,6 +201,37 @@ const StorefrontLayout = () => {
     }
   }, [controlsData]);
 
+  useEffect(() => {
+    if (!selectedItemId || !productData?.length) return;
+
+    const selectedProduct = productData.find(
+      (product) => product.product_key === selectedItemId
+    );
+
+    if (!selectedProduct) return;
+
+    const defaultVariants = {};
+
+    selectedProduct.property.forEach((prop) => {
+      const defaultVariant = prop.variants.find(
+        (variant) => variant.is_default
+      );
+      if (defaultVariant) {
+        if (!defaultVariants[selectedProduct.product_key]) {
+          defaultVariants[selectedProduct.product_key] = {};
+        }
+
+        defaultVariants[selectedProduct.product_key][prop.property_id] =
+          defaultVariant.variant_id ?? defaultVariant.varinat_id;
+      }
+    });
+
+    setSelectedVariants((prev) => ({
+      ...prev,
+      ...defaultVariants,
+    }));
+  }, [selectedItemId, productData]);
+
   const convertedItemsData = itemsData?.map((item) => {
     const convertedMaps = item?.map.map((screen) => {
       return {
