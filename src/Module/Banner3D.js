@@ -104,6 +104,7 @@ const StorefrontLayout = () => {
 
   const { mutate: sendRotateCall } = useSetActionCall();
   const { mutate: variantChange } = useSetProductChangeCall();
+  const { mutate: interactionCall } = useSetActionCall();
 
   const storefrontData = storeData?.data;
 
@@ -117,7 +118,7 @@ const StorefrontLayout = () => {
   const sessionID = storefrontData?.sessionID;
   const itemsData = storefrontData?.storefront?.items;
   const controlsData = storefrontData?.storefront?.controls;
-
+  const [selectedIds, setSelectedIds] = useState({});
   const [selectedTabs, setSelectedTabs] = useState({});
   const [selectedVariants, setSelectedVariants] = useState({});
 
@@ -192,7 +193,7 @@ const StorefrontLayout = () => {
   useEffect(() => {
     if (controlsData?.length) {
       const initialStates = {};
-      controlsData.forEach((control) => {
+      controlsData?.forEach((control) => {
         if (control.control_data_type === "boolean") {
           initialStates[control.control_id] = control.default_value === true;
         }
@@ -212,7 +213,7 @@ const StorefrontLayout = () => {
 
     const defaultVariants = {};
 
-    selectedProduct.property.forEach((prop) => {
+    selectedProduct?.property?.forEach((prop) => {
       const defaultVariant = prop.variants.find(
         (variant) => variant.is_default
       );
@@ -400,6 +401,18 @@ const StorefrontLayout = () => {
       resizeObserverRef.current?.disconnect();
     };
   }, [itemsData, screenType, imageLoaded, calculatedPageLayoutDimensions]);
+
+  useEffect(() => {
+    const defaults = {};
+    itemsData?.forEach((item) => {
+      item.interactions?.forEach((interaction) => {
+        if (interaction.is_default === "true") {
+          defaults[interaction.interaction_id] = true;
+        }
+      });
+    });
+    setSelectedIds(defaults);
+  }, [itemsData]);
 
   const getValueByScreenType = (
     dataArray,
@@ -753,6 +766,31 @@ const StorefrontLayout = () => {
       }
     };
 
+    const toggleBorder = (interactionId, interaction, item) => {
+      const isSelected = !!selectedIds[interactionId];
+      const updated = { ...selectedIds };
+
+      if (isSelected) {
+        delete updated[interactionId];
+      } else {
+        updated[interactionId] = true;
+      }
+
+      interactionCall({
+        session_id: sessionID,
+        message: {
+          type: "run_interaction",
+          message: {
+            item_id: item.item_id,
+            product_key: item.product_key,
+            interaction_id: interactionId,
+          },
+        },
+      });
+
+      setSelectedIds(updated);
+    };
+
     return (
       <Grid
         key={element_id}
@@ -834,6 +872,69 @@ const StorefrontLayout = () => {
                   );
                 })}
               </Box>
+            )}
+
+            {type === "interaction" && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "24px" }}>
+                {itemsData?.map((item) =>
+                  item.interactions?.map((interaction) => {
+                    const icon = interaction.interaction_icons?.[0];
+                    if (!icon) return null;
+
+                    const isSelected =
+                      !!selectedIds[interaction.interaction_id];
+
+                    const selectedBackgroundColor = is_selected_background_color
+                      ? selected_background_color
+                      : "white";
+
+                    return (
+                      <div
+                        key={interaction.interaction_id}
+                        onClick={() =>
+                          toggleBorder(
+                            interaction.interaction_id,
+                            interaction,
+                            item
+                          )
+                        }
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <img
+                          src={icon.path}
+                          alt={interaction.interaction_name}
+                          style={{
+                            width: "40px",
+                            height: "40px",
+                            border: isSelected
+                              ? "2px solid white"
+                              : "2px solid transparent",
+                            borderRadius: "8px",
+                            objectFit: "contain",
+                            backgroundColor: isSelected
+                              ? selectedBackgroundColor
+                              : "transparent",
+                          }}
+                        />
+                        <div
+                          style={{
+                            marginTop: 8,
+                            fontFamily: "Outfit",
+                            fontWeight: "500",
+                          }}
+                        >
+                          {interaction.interaction_name}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             )}
 
             {type === "canvas" && (
