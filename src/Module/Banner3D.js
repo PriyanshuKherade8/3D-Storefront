@@ -1025,11 +1025,9 @@ const StorefrontLayout = () => {
                                       alignItems: "center",
                                       width: 65,
                                       minWidth: 65,
-                                      borderRadius: 2,
                                       cursor: "pointer",
                                       transition: "all 0.2s ease-in-out",
                                       flexShrink: 0,
-                                      paddingTop: "2px",
                                     }}
                                     title={variant.display_name}
                                     onClick={() => {
@@ -1055,14 +1053,15 @@ const StorefrontLayout = () => {
                                         backgroundColor: isSelected
                                           ? "#f0f4ff"
                                           : "transparent",
+                                        padding: "4px",
                                       }}
                                     >
                                       <img
                                         src={icon}
                                         alt={variant.display_name}
                                         style={{
-                                          width: "80%",
-                                          height: "80%",
+                                          width: "100%",
+                                          height: "100%",
                                           objectFit: "cover",
                                           borderRadius: "50%",
                                         }}
