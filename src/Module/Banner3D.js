@@ -875,7 +875,15 @@ const StorefrontLayout = () => {
             )}
 
             {type === "interaction" && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "24px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "24px",
+                  display: "flex",
+                  flexDirection: direction || "row",
+                }}
+              >
                 {itemsData?.map((item) =>
                   item.interactions?.map((interaction) => {
                     const icon = interaction.interaction_icons?.[0];
