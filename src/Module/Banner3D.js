@@ -76,6 +76,9 @@ const StorefrontLayout = () => {
   const [scaledCoordsMap, setScaledCoordsMap] = useState({});
   const [imageLoaded, setImageLoaded] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState(null);
+
+  const [interactionStates, setInteractionStates] = useState({});
+
   console.log("selectedItemId", selectedItemId);
 
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
@@ -880,7 +883,6 @@ const StorefrontLayout = () => {
                   display: "flex",
                   flexWrap: "wrap",
                   gap: "24px",
-                  display: "flex",
                   flexDirection: direction || "row",
                 }}
               >
@@ -889,23 +891,44 @@ const StorefrontLayout = () => {
                     const icon = interaction.interaction_icons?.[0];
                     if (!icon) return null;
 
-                    const isSelected =
-                      !!selectedIds[interaction.interaction_id];
+                    const currentState =
+                      interactionStates[interaction.interaction_id] != null
+                        ? interactionStates[interaction.interaction_id]
+                        : interaction.default_state;
+
+                    const label = currentState
+                      ? interaction.true_name
+                      : interaction.false_name;
+
+                    const isSelected = currentState;
+                    console.log("isSelected", isSelected);
 
                     const selectedBackgroundColor = is_selected_background_color
                       ? selected_background_color
                       : "white";
 
+                    const defaultBorder = is_border
+                      ? `${border || 1}px solid ${border_color || "#000"}`
+                      : "none";
+
+                    const selectedBorder = is_selected_color
+                      ? `${border || 1}px solid ${selected_color || "#000"}`
+                      : "none";
+
                     return (
                       <div
                         key={interaction.interaction_id}
-                        onClick={() =>
+                        onClick={() => {
+                          setInteractionStates((prev) => ({
+                            ...prev,
+                            [interaction.interaction_id]: !currentState,
+                          }));
                           toggleBorder(
                             interaction.interaction_id,
                             interaction,
                             item
-                          )
-                        }
+                          );
+                        }}
                         style={{
                           display: "flex",
                           flexDirection: "column",
@@ -913,30 +936,67 @@ const StorefrontLayout = () => {
                           cursor: "pointer",
                         }}
                       >
-                        <img
-                          src={icon.path}
-                          alt={interaction.interaction_name}
-                          style={{
-                            width: "40px",
-                            height: "40px",
+                        {/* Image wrapper with overlay */}
+                        <Box
+                          sx={{
+                            position: "relative",
+                            width: "60px",
+                            height: "60px",
+                            borderRadius: "8px",
+                            overflow: "hidden",
                             border: isSelected
                               ? "2px solid white"
                               : "2px solid transparent",
-                            borderRadius: "8px",
-                            objectFit: "contain",
-                            backgroundColor: isSelected
-                              ? selectedBackgroundColor
-                              : "transparent",
                           }}
-                        />
+                        >
+                          {/* Image */}
+                          <Tooltip title={label}>
+                            <IconButton
+                              sx={{
+                                width: "100%",
+                                height: "100%",
+                                padding: 0,
+                              }}
+                            >
+                              <img
+                                src={icon.path}
+                                alt={label}
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                  borderRadius: "8px",
+                                }}
+                              />
+                            </IconButton>
+                          </Tooltip>
+
+                          {isSelected && (
+                            <Box
+                              sx={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                width: "100%",
+                                height: "100%",
+                                backgroundColor: selectedBackgroundColor,
+                                opacity: 0.5,
+                                pointerEvents: "none",
+                                borderRadius: "8px",
+                              }}
+                            />
+                          )}
+                        </Box>
+
                         <div
                           style={{
                             marginTop: 8,
                             fontFamily: "Outfit",
                             fontWeight: "500",
+                            textAlign: "center",
                           }}
                         >
-                          {interaction.interaction_name}
+                          {label}
                         </div>
                       </div>
                     );
@@ -1087,8 +1147,9 @@ const StorefrontLayout = () => {
                             id={`variant-scroll-${product_key}`}
                             sx={{
                               display: "flex",
-                              gap: 1,
+                              gap: 3,
                               // py: 0.5,
+                              paddingTop: "5px",
                               overflowX: "auto",
                               overflowY: "hidden",
                               width: "100%",
@@ -1182,6 +1243,10 @@ const StorefrontLayout = () => {
                                         textAlign: "center",
                                         fontSize: "12px",
                                         whiteSpace: "nowrap",
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        width: "100%",
+                                        display: "block",
                                       }}
                                     >
                                       {variant.display_name}
