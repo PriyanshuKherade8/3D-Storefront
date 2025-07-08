@@ -901,7 +901,6 @@ const StorefrontLayout = () => {
                       : interaction.false_name;
 
                     const isSelected = currentState;
-                    console.log("isSelected", isSelected);
 
                     const selectedBackgroundColor = is_selected_background_color
                       ? selected_background_color
@@ -913,7 +912,7 @@ const StorefrontLayout = () => {
 
                     const selectedBorder = is_selected_color
                       ? `${border || 1}px solid ${selected_color || "#000"}`
-                      : "none";
+                      : defaultBorder;
 
                     return (
                       <div
@@ -944,9 +943,7 @@ const StorefrontLayout = () => {
                             height: "60px",
                             borderRadius: "8px",
                             overflow: "hidden",
-                            border: isSelected
-                              ? "2px solid white"
-                              : "2px solid transparent",
+                            border: isSelected ? selectedBorder : defaultBorder,
                           }}
                         >
                           {/* Image */}
