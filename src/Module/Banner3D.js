@@ -717,6 +717,8 @@ const StorefrontLayout = () => {
       box_shadow,
       blur,
       is_blur,
+      is_selected_border_color,
+      selected_border_color,
     } = props;
 
     const isVisible = element?.props?.is_visible !== false;
@@ -906,12 +908,14 @@ const StorefrontLayout = () => {
                       ? selected_background_color
                       : "white";
 
-                    const defaultBorder = is_border
+                    const defaultBorder = true
                       ? `${border || 1}px solid ${border_color || "#000"}`
                       : "none";
 
-                    const selectedBorder = is_selected_color
-                      ? `${border || 1}px solid ${selected_color || "#000"}`
+                    const selectedBorder = is_selected_border_color
+                      ? `${border || 1}px solid ${
+                          selected_border_color || "#000"
+                        }`
                       : defaultBorder;
 
                     return (
@@ -976,7 +980,9 @@ const StorefrontLayout = () => {
                                 left: 0,
                                 width: "100%",
                                 height: "100%",
-                                backgroundColor: selectedBackgroundColor,
+                                backgroundColor: !is_transparent
+                                  ? selectedBackgroundColor
+                                  : "transparent",
                                 opacity: 0.5,
                                 pointerEvents: "none",
                                 borderRadius: "8px",
