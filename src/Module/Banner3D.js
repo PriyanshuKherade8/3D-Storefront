@@ -1532,7 +1532,6 @@ const StorefrontLayout = () => {
                         gap: "10px",
                         height: "100%",
                         flexDirection: interaction_direction || "row",
-
                         justifyContent: "center",
                         alignItems: "center",
                       }}
@@ -1553,21 +1552,6 @@ const StorefrontLayout = () => {
                             : interaction.false_name;
 
                           const isSelected = currentState;
-
-                          const selectedBackgroundColor =
-                            is_selected_background_color
-                              ? selected_background_color
-                              : "white";
-
-                          const defaultBorder = true
-                            ? `${border || 1}px solid ${border_color || "#000"}`
-                            : "none";
-
-                          const selectedBorder = is_selected_border_color
-                            ? `${border || 1}px solid ${
-                                selected_border_color || "#000"
-                              }`
-                            : defaultBorder;
 
                           return (
                             <div
@@ -1590,58 +1574,33 @@ const StorefrontLayout = () => {
                                 cursor: "pointer",
                               }}
                             >
-                              {/* Image wrapper with overlay */}
                               <Box
                                 sx={{
-                                  position: "relative",
+                                  border: isSelected
+                                    ? "2px solid #192b61"
+                                    : "2px solid transparent",
+                                  borderRadius: "8px",
+                                  padding: "4px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
                                   width: "50px",
                                   height: "50px",
-                                  borderRadius: "8px",
-
-                                  border: isSelected
-                                    ? selectedBorder
-                                    : defaultBorder,
+                                  boxSizing: "border-box",
                                 }}
                               >
-                                {/* Image */}
                                 <Tooltip title={label}>
-                                  <IconButton
-                                    sx={{
+                                  <img
+                                    src={icon.path}
+                                    alt={label}
+                                    style={{
                                       width: "100%",
                                       height: "100%",
-                                      padding: 0,
-                                    }}
-                                  >
-                                    <img
-                                      src={icon.path}
-                                      alt={label}
-                                      style={{
-                                        width: "100%",
-                                        height: "100%",
-                                        objectFit: "cover",
-                                        borderRadius: "8px",
-                                      }}
-                                    />
-                                  </IconButton>
-                                </Tooltip>
-
-                                {isSelected && (
-                                  <Box
-                                    sx={{
-                                      position: "absolute",
-                                      top: 0,
-                                      left: 0,
-                                      width: "100%",
-                                      height: "100%",
-                                      backgroundColor: !is_transparent
-                                        ? selectedBackgroundColor
-                                        : "transparent",
-                                      opacity: 0.5,
-                                      pointerEvents: "none",
-                                      borderRadius: "8px",
+                                      objectFit: "cover",
+                                      borderRadius: "4px",
                                     }}
                                   />
-                                )}
+                                </Tooltip>
                               </Box>
 
                               <Typography
