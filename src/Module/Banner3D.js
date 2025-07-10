@@ -719,6 +719,8 @@ const StorefrontLayout = () => {
       is_blur,
       is_selected_border_color,
       selected_border_color,
+      interaction_direction,
+      config_direction,
     } = props;
 
     const isVisible = element?.props?.is_visible !== false;
@@ -1464,6 +1466,393 @@ const StorefrontLayout = () => {
               >
                 {props?.text}
               </Box>
+            )}
+
+            {type === "interactionConfig" && (
+              <>
+                <Box
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                  }}
+                >
+                  {productData
+                    .filter((product) => product.product_key === selectedItemId)
+                    .map((product) => {
+                      const {
+                        product_key,
+                        product_name,
+                        property,
+                        display_name,
+                      } = product;
+                      const localSelectedTab = selectedTabs[product_key] || 0;
+
+                      return (
+                        <Box key={product_key}>
+                          {display_name && (
+                            <Box
+                            // sx={{ marginBottom: "4px" }}
+                            >
+                              <Typography
+                                variant="subtitle1"
+                                sx={{ fontWeight: 600, color: "#192b61" }}
+                              >
+                                {display_name}
+                              </Typography>
+                            </Box>
+                          )}
+                        </Box>
+                      );
+                    })}
+                </Box>
+                <Box
+                  style={{
+                    display: "flex",
+                    flexDirection: direction || "row",
+                  }}
+                >
+                  {/* parent */}
+                  <Box
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    {/* interaction */}
+                    <Box
+                      style={{
+                        display: "flex",
+                        gap: "10px",
+                        flexDirection: interaction_direction || "row",
+                        // flexDirection: "row",
+                        padding: "0px 10px",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      {itemsData?.map((item) =>
+                        item.interactions?.map((interaction) => {
+                          const icon = interaction.interaction_icons?.[0];
+                          if (!icon) return null;
+
+                          const currentState =
+                            interactionStates[interaction.interaction_id] !=
+                            null
+                              ? interactionStates[interaction.interaction_id]
+                              : interaction.default_state;
+
+                          const label = currentState
+                            ? interaction.true_name
+                            : interaction.false_name;
+
+                          const isSelected = currentState;
+
+                          const selectedBackgroundColor =
+                            is_selected_background_color
+                              ? selected_background_color
+                              : "white";
+
+                          const defaultBorder = true
+                            ? `${border || 1}px solid ${border_color || "#000"}`
+                            : "none";
+
+                          const selectedBorder = is_selected_border_color
+                            ? `${border || 1}px solid ${
+                                selected_border_color || "#000"
+                              }`
+                            : defaultBorder;
+
+                          return (
+                            <div
+                              key={interaction.interaction_id}
+                              onClick={() => {
+                                setInteractionStates((prev) => ({
+                                  ...prev,
+                                  [interaction.interaction_id]: !currentState,
+                                }));
+                                toggleBorder(
+                                  interaction.interaction_id,
+                                  interaction,
+                                  item
+                                );
+                              }}
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                cursor: "pointer",
+                              }}
+                            >
+                              {/* Image wrapper with overlay */}
+                              <Box
+                                sx={{
+                                  position: "relative",
+                                  width: "50px",
+                                  height: "50px",
+                                  borderRadius: "8px",
+
+                                  border: isSelected
+                                    ? selectedBorder
+                                    : defaultBorder,
+                                }}
+                              >
+                                {/* Image */}
+                                <Tooltip title={label}>
+                                  <IconButton
+                                    sx={{
+                                      width: "100%",
+                                      height: "100%",
+                                      padding: 0,
+                                    }}
+                                  >
+                                    <img
+                                      src={icon.path}
+                                      alt={label}
+                                      style={{
+                                        width: "100%",
+                                        height: "100%",
+                                        objectFit: "cover",
+                                        borderRadius: "8px",
+                                      }}
+                                    />
+                                  </IconButton>
+                                </Tooltip>
+
+                                {isSelected && (
+                                  <Box
+                                    sx={{
+                                      position: "absolute",
+                                      top: 0,
+                                      left: 0,
+                                      width: "100%",
+                                      height: "100%",
+                                      backgroundColor: !is_transparent
+                                        ? selectedBackgroundColor
+                                        : "transparent",
+                                      opacity: 0.5,
+                                      pointerEvents: "none",
+                                      borderRadius: "8px",
+                                    }}
+                                  />
+                                )}
+                              </Box>
+
+                              <div
+                                style={{
+                                  marginTop: 8,
+                                  fontFamily: "Outfit",
+                                  fontWeight: "500",
+                                  textAlign: "center",
+                                }}
+                              >
+                                {label}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </Box>
+
+                    {/* config */}
+                    <Box
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                      }}
+                    >
+                      {productData
+                        .filter(
+                          (product) => product.product_key === selectedItemId
+                        )
+                        .map((product) => {
+                          const {
+                            product_key,
+                            product_name,
+                            property,
+                            display_name,
+                          } = product;
+                          const localSelectedTab =
+                            selectedTabs[product_key] || 0;
+
+                          return (
+                            <Box key={product_key}>
+                              <Tabs
+                                value={localSelectedTab}
+                                onChange={(e, newValue) =>
+                                  setSelectedTabs((prev) => ({
+                                    ...prev,
+                                    [product_key]: newValue,
+                                  }))
+                                }
+                                variant="scrollable"
+                                scrollButtons="auto"
+                                aria-label={`config-tabs-${product_key}`}
+                                sx={{
+                                  minHeight: "auto",
+                                  padding: "0px",
+                                  borderBottom: "1px solid #e0e0e0",
+                                  "& .MuiTabs-flexContainer": {
+                                    gap: 1,
+                                  },
+                                  "& .MuiTab-root": {
+                                    textTransform: "none",
+                                    fontWeight: 500,
+                                    fontSize: "14px",
+                                    color: "#192b61",
+                                    fontFamily: "inherit",
+                                    minHeight: "auto",
+                                    padding: "0px",
+                                  },
+                                  "& .MuiTab-root.Mui-selected": {
+                                    color: "#192b61",
+                                    fontWeight: 600,
+                                    marginBottom: "5px",
+                                  },
+                                  "& .MuiTabs-indicator": {
+                                    backgroundColor: "#192b61",
+                                  },
+                                }}
+                              >
+                                {property.map((prop) => (
+                                  <Tab
+                                    key={prop.property_id}
+                                    label={prop.display_name}
+                                    disableRipple
+                                  />
+                                ))}
+                              </Tabs>
+
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  width: "100%",
+                                  overflow: "hidden",
+                                }}
+                              >
+                                <Box
+                                  id={`variant-scroll-${product_key}`}
+                                  sx={{
+                                    display: "flex",
+                                    gap: 3,
+
+                                    paddingTop: "5px",
+                                    overflowX: "auto",
+                                    overflowY: "hidden",
+                                    width: "100%",
+
+                                    scrollBehavior: "smooth",
+                                    WebkitOverflowScrolling: "touch",
+                                    scrollbarWidth: "thin",
+                                    "&::-webkit-scrollbar": {
+                                      height: "4px",
+                                    },
+                                    "&::-webkit-scrollbar-track": {
+                                      backgroundColor: "transparent",
+                                    },
+                                    "&::-webkit-scrollbar-thumb": {
+                                      backgroundColor: "#aaa",
+                                      borderRadius: "4px",
+                                    },
+                                  }}
+                                >
+                                  {property[localSelectedTab]?.variants.map(
+                                    (variant) => {
+                                      const productKey = product.product_key;
+                                      const propertyId =
+                                        property[localSelectedTab].property_id;
+                                      const variantId =
+                                        variant.variant_id ??
+                                        variant.varinat_id;
+
+                                      const isSelected =
+                                        selectedVariants?.[productKey]?.[
+                                          propertyId
+                                        ] === variantId;
+
+                                      const icon = variant.variant_icons?.find(
+                                        (icon) => icon.file_type === "L"
+                                      )?.path;
+
+                                      return (
+                                        <Box
+                                          key={variantId}
+                                          sx={{
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            alignItems: "center",
+                                            width: 65,
+                                            minWidth: 65,
+                                            cursor: "pointer",
+                                            transition: "all 0.2s ease-in-out",
+                                            flexShrink: 0,
+                                          }}
+                                          title={variant.display_name}
+                                          onClick={() => {
+                                            handleVariantChange(
+                                              productKey,
+                                              propertyId,
+                                              variantId
+                                            );
+                                          }}
+                                        >
+                                          <Box
+                                            sx={{
+                                              width: 34,
+                                              height: 34,
+                                              borderRadius: "50%",
+                                              overflow: "hidden",
+                                              border: isSelected
+                                                ? "2px solid #192b61"
+                                                : "2px solid transparent",
+                                              display: "flex",
+                                              alignItems: "center",
+                                              justifyContent: "center",
+                                              backgroundColor: isSelected
+                                                ? "#f0f4ff"
+                                                : "transparent",
+                                              padding: "4px",
+                                            }}
+                                          >
+                                            <img
+                                              src={icon}
+                                              alt={variant.display_name}
+                                              style={{
+                                                width: "100%",
+                                                height: "100%",
+                                                objectFit: "cover",
+                                                borderRadius: "50%",
+                                              }}
+                                            />
+                                          </Box>
+                                          <Typography
+                                            variant="caption"
+                                            sx={{
+                                              textAlign: "center",
+                                              fontSize: "12px",
+                                              whiteSpace: "nowrap",
+                                              overflow: "hidden",
+                                              textOverflow: "ellipsis",
+                                              width: "100%",
+                                              display: "block",
+                                            }}
+                                          >
+                                            {variant.display_name}
+                                          </Typography>
+                                        </Box>
+                                      );
+                                    }
+                                  )}
+                                </Box>
+                              </Box>
+                            </Box>
+                          );
+                        })}
+                    </Box>
+                  </Box>
+                </Box>
+              </>
             )}
           </>
         )}
