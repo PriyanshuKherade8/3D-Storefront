@@ -886,82 +886,72 @@ const StorefrontLayout = () => {
               <div
                 style={{
                   display: "flex",
-                  flexWrap: "wrap",
-                  gap: "24px",
+
                   flexDirection: direction || "row",
                 }}
               >
-                {itemsData?.map((item) =>
-                  item.interactions?.map((interaction) => {
-                    const icon = interaction.interaction_icons?.[0];
-                    if (!icon) return null;
+                <Box
+                  style={{
+                    display: "flex",
+                    gap: "10px",
+                    height: "100%",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  {itemsData?.map((item) =>
+                    item.interactions?.map((interaction) => {
+                      const icon = interaction.interaction_icons?.[0];
+                      if (!icon) return null;
 
-                    const currentState =
-                      interactionStates[interaction.interaction_id] != null
-                        ? interactionStates[interaction.interaction_id]
-                        : interaction.default_state;
+                      const currentState =
+                        interactionStates[interaction.interaction_id] != null
+                          ? interactionStates[interaction.interaction_id]
+                          : interaction.default_state;
 
-                    const label = currentState
-                      ? interaction.true_name
-                      : interaction.false_name;
+                      const label = currentState
+                        ? interaction.true_name
+                        : interaction.false_name;
 
-                    const isSelected = currentState;
+                      const isSelected = currentState;
 
-                    const selectedBackgroundColor = is_selected_background_color
-                      ? selected_background_color
-                      : "white";
-
-                    const defaultBorder = true
-                      ? `${border || 1}px solid ${border_color || "#000"}`
-                      : "none";
-
-                    const selectedBorder = is_selected_border_color
-                      ? `${border || 1}px solid ${
-                          selected_border_color || "#000"
-                        }`
-                      : defaultBorder;
-
-                    return (
-                      <div
-                        key={interaction.interaction_id}
-                        onClick={() => {
-                          setInteractionStates((prev) => ({
-                            ...prev,
-                            [interaction.interaction_id]: !currentState,
-                          }));
-                          toggleBorder(
-                            interaction.interaction_id,
-                            interaction,
-                            item
-                          );
-                        }}
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {/* Image wrapper with overlay */}
-                        <Box
-                          sx={{
-                            position: "relative",
-                            width: "60px",
-                            height: "60px",
-                            borderRadius: "8px",
-                            overflow: "hidden",
-                            border: isSelected ? selectedBorder : defaultBorder,
+                      return (
+                        <div
+                          key={interaction.interaction_id}
+                          onClick={() => {
+                            setInteractionStates((prev) => ({
+                              ...prev,
+                              [interaction.interaction_id]: !currentState,
+                            }));
+                            toggleBorder(
+                              interaction.interaction_id,
+                              interaction,
+                              item
+                            );
+                          }}
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            cursor: "pointer",
                           }}
                         >
-                          {/* Image */}
-                          <Tooltip title={label}>
-                            <IconButton
-                              sx={{
-                                width: "100%",
-                                height: "100%",
-                                padding: 0,
-                              }}
-                            >
+                          <Box
+                            sx={{
+                              border: isSelected
+                                ? "2px solid #192b61"
+                                : "2px solid transparent",
+                              borderRadius: "8px",
+                              padding: "4px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: "50px",
+                              height: "50px",
+                              boxSizing: "border-box",
+                            }}
+                          >
+                            <Tooltip title={label}>
                               <img
                                 src={icon.path}
                                 alt={label}
@@ -969,45 +959,32 @@ const StorefrontLayout = () => {
                                   width: "100%",
                                   height: "100%",
                                   objectFit: "cover",
-                                  borderRadius: "8px",
+                                  borderRadius: "4px",
                                 }}
                               />
-                            </IconButton>
-                          </Tooltip>
+                            </Tooltip>
+                          </Box>
 
-                          {isSelected && (
-                            <Box
-                              sx={{
-                                position: "absolute",
-                                top: 0,
-                                left: 0,
-                                width: "100%",
-                                height: "100%",
-                                backgroundColor: !is_transparent
-                                  ? selectedBackgroundColor
-                                  : "transparent",
-                                opacity: 0.5,
-                                pointerEvents: "none",
-                                borderRadius: "8px",
-                              }}
-                            />
-                          )}
-                        </Box>
-
-                        <div
-                          style={{
-                            marginTop: 8,
-                            fontFamily: "Outfit",
-                            fontWeight: "500",
-                            textAlign: "center",
-                          }}
-                        >
-                          {label}
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              textAlign: "center",
+                              fontSize: "13px",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              width: "100%",
+                              display: "block",
+                              fontFamily: "Outfit",
+                            }}
+                          >
+                            {label}
+                          </Typography>
                         </div>
-                      </div>
-                    );
-                  })
-                )}
+                      );
+                    })
+                  )}
+                </Box>
               </div>
             )}
 
