@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Box,
+  Divider,
   IconButton,
   Paper,
   Tab,
@@ -1495,7 +1496,12 @@ const StorefrontLayout = () => {
                             >
                               <Typography
                                 variant="subtitle1"
-                                sx={{ fontWeight: 600, color: "#192b61" }}
+                                sx={{
+                                  fontWeight: 550,
+                                  color: "#192b61",
+                                  fontFamily: "Outfit",
+                                  fontSize: "18px",
+                                }}
                               >
                                 {display_name}
                               </Typography>
@@ -1524,9 +1530,9 @@ const StorefrontLayout = () => {
                       style={{
                         display: "flex",
                         gap: "10px",
+                        height: "100%",
                         flexDirection: interaction_direction || "row",
-                        // flexDirection: "row",
-                        padding: "0px 10px",
+
                         justifyContent: "center",
                         alignItems: "center",
                       }}
@@ -1638,21 +1644,36 @@ const StorefrontLayout = () => {
                                 )}
                               </Box>
 
-                              <div
-                                style={{
-                                  marginTop: 8,
-                                  fontFamily: "Outfit",
-                                  fontWeight: "500",
+                              <Typography
+                                variant="caption"
+                                sx={{
                                   textAlign: "center",
+                                  fontSize: "13px",
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  width: "100%",
+                                  display: "block",
+                                  fontFamily: "Outfit",
                                 }}
                               >
                                 {label}
-                              </div>
+                              </Typography>
                             </div>
                           );
                         })
                       )}
                     </Box>
+
+                    <Divider
+                      orientation={
+                        direction === "column" ? "horizontal" : "vertical"
+                      }
+                      flexItem
+                      sx={{
+                        margin: direction === "column" ? "8px 0" : "0 16px",
+                      }}
+                    />
 
                     {/* config */}
                     <Box
@@ -1700,13 +1721,13 @@ const StorefrontLayout = () => {
                                     fontWeight: 500,
                                     fontSize: "14px",
                                     color: "#192b61",
-                                    fontFamily: "inherit",
+                                    fontFamily: "Outfit",
                                     minHeight: "auto",
                                     padding: "0px",
                                   },
                                   "& .MuiTab-root.Mui-selected": {
                                     color: "#192b61",
-                                    fontWeight: 600,
+                                    fontWeight: 550,
                                     marginBottom: "5px",
                                   },
                                   "& .MuiTabs-indicator": {
@@ -1830,12 +1851,13 @@ const StorefrontLayout = () => {
                                             variant="caption"
                                             sx={{
                                               textAlign: "center",
-                                              fontSize: "12px",
+                                              fontSize: "13px",
                                               whiteSpace: "nowrap",
                                               overflow: "hidden",
                                               textOverflow: "ellipsis",
                                               width: "100%",
                                               display: "block",
+                                              fontFamily: "Outfit",
                                             }}
                                           >
                                             {variant.display_name}
