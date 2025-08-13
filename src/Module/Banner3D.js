@@ -1122,7 +1122,7 @@ const StorefrontLayout = () => {
                           sx={{
                             display: "flex",
                             alignItems: "center",
-                            width: "100%",
+                            width: "316px",
                             overflow: "hidden",
                           }}
                         >
@@ -1130,13 +1130,13 @@ const StorefrontLayout = () => {
                             id={`variant-scroll-${product_key}`}
                             sx={{
                               display: "flex",
-                              gap: 3,
+                              gap: 1,
                               // py: 0.5,
                               paddingTop: "5px",
                               overflowX: "auto",
                               overflowY: "hidden",
                               width: "100%",
-                              // justifyContent: "space-between",
+                              justifyContent: "space-between",
                               scrollBehavior: "smooth",
                               WebkitOverflowScrolling: "touch",
                               scrollbarWidth: "thin",
