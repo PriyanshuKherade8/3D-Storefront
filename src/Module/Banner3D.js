@@ -1128,6 +1128,12 @@ const StorefrontLayout = () => {
                         >
                           <Box
                             id={`variant-scroll-${product_key}`}
+                            onWheel={(e) => {
+                              const el = e.currentTarget;
+                              if (el.scrollWidth > el.clientWidth) {
+                                el.scrollLeft += e.deltaY;
+                              }
+                            }}
                             sx={{
                               display: "flex",
                               gap: 1,
@@ -1139,7 +1145,7 @@ const StorefrontLayout = () => {
                               justifyContent: "space-between",
                               scrollBehavior: "smooth",
                               WebkitOverflowScrolling: "touch",
-                              scrollbarWidth: "thin",
+                              // scrollbarWidth: "thin",
                               "&::-webkit-scrollbar": {
                                 height: "4px",
                               },
